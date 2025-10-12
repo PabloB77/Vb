@@ -40,7 +40,7 @@ struct MapView: View {
                             guard let start = startPoint, let end = endPoint else { return }
                             let rect = createMapRect(from: start, to: end)
                             selectedRectangle = rect
-                            AIManager.generate()
+                            //AIManager.generate()
                             fetchSoilData(for: rect)
                         }
                 )

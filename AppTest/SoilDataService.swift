@@ -148,15 +148,6 @@ struct SoilDataService {
         // Build WKT polygon in lon lat order (WGS84)
         let wkt = "POLYGON((\(boundingBox.minLon) \(boundingBox.minLat), \(boundingBox.maxLon) \(boundingBox.minLat), \(boundingBox.maxLon) \(boundingBox.maxLat), \(boundingBox.minLon) \(boundingBox.maxLat), \(boundingBox.minLon) \(boundingBox.minLat)))"
         
-        AIManager.generateNVidia1(prompt: "What is the capital of France?") { result in
-            switch result {
-            case .success(let response):
-                print("Response: \(response)")
-            case .failure(let error):
-                print("Error: \(error)")
-            }
-        }
-        
         let query = """
         ~DeclareGeometry(@aoi)~
         select @aoi = geometry::STPolyFromText('\(wkt)', 4326);

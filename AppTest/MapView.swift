@@ -12,14 +12,16 @@ struct MapView: View {
     @State private var startPoint: CGPoint?
     @State private var endPoint: CGPoint?
     @State private var showingSoilPopup = false
+    @State private var showingSoilDataPopup = false
     @State private var soilData: [SoilDataService.MapUnit] = []
     @State private var isLoading = false
     
     private let soilService = SoilDataService()
     
     var body: some View {
+        let modes: MapInteractionModes = isSelecting ? [] : [.pan, .zoom]
         ZStack {
-            Map(coordinateRegion: $region, interactionModes: isSelecting ? [] : [.pan, .zoom])
+            Map(coordinateRegion: $region, interactionModes: modes)
                 .mapStyle(.hybrid)
                 .frame(width: 600, height: 650)
                 .highPriorityGesture(
@@ -40,12 +42,10 @@ struct MapView: View {
                             guard let start = startPoint, let end = endPoint else { return }
                             let rect = createMapRect(from: start, to: end)
                             selectedRectangle = rect
-                            //AIManager.generate()
                             fetchSoilData(for: rect)
                         }
                 )
             
-            // Selection rectangle overlay
             if isSelecting, let start = startPoint, let end = endPoint {
                 Rectangle()
                     .stroke(Color.blue, lineWidth: 2)
@@ -60,7 +60,6 @@ struct MapView: View {
                     )
             }
             
-            // Loading indicator
             if isLoading {
                 VStack {
                     ProgressView()
@@ -75,6 +74,10 @@ struct MapView: View {
             }
         }
         .sheet(isPresented: $showingSoilPopup) {
+            SoilSelectionPopup(soilData: soilData, showingSoilDataPopup: $showingSoilDataPopup)
+                .frame(minWidth: 400, minHeight: 300)
+        }
+        .sheet(isPresented: $showingSoilDataPopup) {
             SoilDataPopup(soilData: soilData)
                 .frame(minWidth: 600, minHeight: 500)
         }
@@ -102,16 +105,12 @@ struct MapView: View {
     }
     
     private func coordinateFromPoint(_ point: CGPoint) -> CLLocationCoordinate2D {
-        // Convert screen point to coordinate using the current map region
         let mapWidth: CGFloat = 600.0
         let mapHeight: CGFloat = 650.0
         
-        // Calculate the normalized position (0 to 1) within the map view
         let normalizedX = point.x / mapWidth
         let normalizedY = point.y / mapHeight
         
-        // Convert to latitude/longitude using the map region
-        // Note: longitude increases left to right, latitude decreases top to bottom
         let lon = region.center.longitude - (region.span.longitudeDelta / 2) + (Double(normalizedX) * region.span.longitudeDelta)
         let lat = region.center.latitude + (region.span.latitudeDelta / 2) - (Double(normalizedY) * region.span.latitudeDelta)
         
@@ -121,22 +120,18 @@ struct MapView: View {
     private func fetchSoilData(for rect: MKMapRect) {
         isLoading = true
         
-        // Calculate the actual center of the rectangle
         let centerPoint = MKMapPoint(x: rect.origin.x + rect.size.width / 2,
                                       y: rect.origin.y + rect.size.height / 2)
         let center = centerPoint.coordinate
         
-        // Get the corner coordinates to calculate actual distance
         let topLeft = MKMapPoint(x: rect.origin.x, y: rect.origin.y).coordinate
         let bottomRight = MKMapPoint(x: rect.origin.x + rect.size.width,
                                       y: rect.origin.y + rect.size.height).coordinate
         
-        // Calculate actual distance in meters using CLLocation
         let topLeftLocation = CLLocation(latitude: topLeft.latitude, longitude: topLeft.longitude)
         let bottomRightLocation = CLLocation(latitude: bottomRight.latitude, longitude: bottomRight.longitude)
         let diagonalDistance = topLeftLocation.distance(from: bottomRightLocation)
         
-        // Use diagonal / sqrt(2) to get approximate side length
         let sideLength = diagonalDistance / sqrt(2.0)
         
         print("DEBUG: Querying center: \(center.latitude), \(center.longitude)")
@@ -151,11 +146,105 @@ struct MapView: View {
                 isLoading = false
                 switch result {
                 case .success(let data):
+                    for unit in data.prefix(10) {
+                        print("Soil: \(unit.muname) | Taxonomy: \(unit.taxclname) | %AOI: \(String(format: "%.1f", unit.component_pct_of_aoi))")
+                    }
                     soilData = data
                     showingSoilPopup = true
                 case .failure(let error):
                     soilData = []
                     showingSoilPopup = true
+                }
+            }
+        }
+    }
+}
+
+struct SoilSelectionPopup: View {
+    let soilData: [SoilDataService.MapUnit]
+    @Binding var showingSoilDataPopup: Bool
+    @Environment(\.dismiss) private var dismiss
+    @State private var aiOutput = ""
+    @State private var isGenerating = false
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 24) {
+                if soilData.isEmpty {
+                    VStack(spacing: 16) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.system(size: 48))
+                            .foregroundColor(.orange)
+                        
+                        Text("No soil data found for this area")
+                            .font(.title2)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+                        
+                        Text("Try selecting a different area on the map")
+                            .font(.body)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    VStack {
+                        if !aiOutput.isEmpty {
+                            Text(aiOutput)
+                        }
+                        
+                        if isGenerating {
+                            Text("Generating...")
+                        }
+                        
+                        Button(action: {
+                            dismiss()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                showingSoilDataPopup = true
+                            }
+                        }) {
+                            Text("View Soil Details")
+                        }
+                    }
+                }
+            }
+            .padding(32)
+            .navigationTitle("Area Selected")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .onAppear {
+            generateSoilAnalysis()
+        }
+    }
+    
+    private func generateSoilAnalysis() {
+        isGenerating = true
+        aiOutput = ""
+        
+        let soilDataString = soilData.map { unit in
+            "Soil: \(unit.muname) | Taxonomy: \(unit.taxclname) | % composition: \(String(format: "%.1f", unit.component_pct_of_aoi))"
+        }.joined(separator: "\n")
+        
+        AIManager.generateNVidiaStreamingLive(soilData: soilDataString) { chunk in
+            DispatchQueue.main.async {
+                aiOutput += chunk
+            }
+        } completion: { result in
+            DispatchQueue.main.async {
+                isGenerating = false
+                switch result {
+                case .success:
+                    break
+                case .failure:
+                    if aiOutput.isEmpty {
+                        aiOutput = "Error generating analysis"
+                    }
                 }
             }
         }
@@ -193,12 +282,10 @@ struct SoilDataPopup: View {
                     
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 12) {
-                            // Major soils (>= 5%)
                             ForEach(Array(majorSoils.enumerated()), id: \.offset) { index, unit in
                                 SoilUnitView(unit: unit)
                             }
                             
-                            // Minor soils group
                             if !minorSoils.isEmpty {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Button(action: {

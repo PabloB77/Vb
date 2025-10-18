@@ -23,7 +23,85 @@ public class AIManager {
     }
 
     // NEW: Live streaming version with chunk callback
-    public static func generateNVidiaStreamingLive(
+    public static func generateNVidiaStreamingLiveGenericThink(
+        soilData: String,
+        onChunk: @escaping (String) -> Void,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        let apiKey = "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"
+        let model = "nvidia/llama-3.3-nemotron-super-49b-v1.5"
+        let url = URL(string: "https://integrate.api.nvidia.com/v1/chat/completions")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        
+        let prompt = """
+        \(soilData)
+        """
+        
+        let body: [String: Any] = [
+            "model": model,
+            "messages": [
+                ["role": "user", "content": prompt]
+            ],
+            "temperature": 0,
+            "top_p": 1,
+            "max_tokens": 2048,
+            "frequency_penalty": 0,
+            "presence_penalty": 0,
+            "stream": true
+        ]
+        
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        
+        let delegate = LiveStreamingDelegate(onChunk: onChunk, completion: completion)
+        
+        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+        let task = session.dataTask(with: request)
+        task.resume()
+    }
+    public static func generateNVidiaStreamingLiveGeneric(
+        soilData: String,
+        onChunk: @escaping (String) -> Void,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        let apiKey = "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"
+        let model = "nvidia/llama-3.3-nemotron-super-49b-v1.5"
+        let url = URL(string: "https://integrate.api.nvidia.com/v1/chat/completions")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        
+        let prompt = """
+        \(soilData)
+        """
+        
+        let body: [String: Any] = [
+            "model": model,
+            "messages": [
+                ["role": "system", "content": "/no_think"],
+                ["role": "user", "content": prompt]
+            ],
+            "temperature": 0,
+            "top_p": 1,
+            "max_tokens": 2048,
+            "frequency_penalty": 0,
+            "presence_penalty": 0,
+            "stream": true
+        ]
+        
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        
+        let delegate = LiveStreamingDelegate(onChunk: onChunk, completion: completion)
+        
+        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+        let task = session.dataTask(with: request)
+        task.resume()
+    }
+
+       public static func generateNVidiaStreamingLive(
         soilData: String,
         onChunk: @escaping (String) -> Void,
         completion: @escaping (Result<Void, Error>) -> Void

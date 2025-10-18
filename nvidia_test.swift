@@ -116,6 +116,72 @@ func generateNVidiaStreaming(soilData: String) -> Result<Void, Error> {
     }
     
     return .success(())
+}func generateNVidiaStreaming(soilData: String) -> Result<Void, Error> {
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+    
+    let prompt = """
+    TASK:
+    - Determine the combined overall soil characteristics for the area based on the given data.
+    
+    \(soilData)
+    
+    
+    
+    
+    OUTPUT FORMAT (strict - only provide the selected values):
+    - Porosity: [select one: Virtually none, Low, Medium Low, Medium, Medium High, High]
+    - Organic Matter: [select one: Very Low, Low, Medium Low, Medium, Medium High, High]  
+    - Soil Texture: [select one: Sand, Sand and Loam, Loam, Loam and Clay, Clay, Clay and Loam, Sand and Clay]
+    - pH (estimated): [select one: 4.5-6, 6-7, 7-8.5]
+    - Drainage: [select one: Poor, Moderate, Well-drained, Excessive]
+    - Color (estimated): [select one: Black, Brown, Red-Brown, Yellow, Gray, Mixed]
+    
+    
+    
+    
+    RULES:
+    - Base the result on the dominant soils by percentage.
+    - Minor soils (under ~5%) may be excluded.
+    - Choose only one value per category.
+    - No explanations or commentary.
+    - No headings or extra lines.
+    - Output must contain exactly six lines matching the format above.
+    - ONLY choose from output values offered
+    """
+    
+    let body: [String: Any] = [
+        "model": model,
+        "messages": [
+            ["role": "system", "content": "/no_think"],
+            ["role": "user", "content": prompt]
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 2048,
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "stream": true
+    ]
+    
+    request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+    
+    let semaphore = DispatchSemaphore(value: 0)
+    let delegate = StreamingDelegate(semaphore: semaphore)
+    
+    let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+    let task = session.dataTask(with: request)
+    task.resume()
+    
+    semaphore.wait()
+    
+    if let error = delegate.error {
+        return .failure(error)
+    }
+    
+    return .success(())
 }
 
 let soilData = """

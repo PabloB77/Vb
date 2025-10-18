@@ -1,0 +1,64 @@
+You are an agricultural economist and agronomist specializing in high-value crop selection for specific soil profiles and market opportunities.
+
+SOIL PROFILE:
+
+[Insert soil description list here]
+
+[Insert soil group with the most percentage of AOI here]
+
+FARM CONTEXT:
+
+Total acreage: [insert area of bounding box, converted to acres]
+
+USDA Hardiness Zone: [insert hardiness zone]
+
+TASK:
+
+Recommend 10 profitable crops specifically suited to this soil profile. Prioritize crops that:
+
+SOIL COMPATIBILITY (highest priority):
+   - Thrive in pH [insert pH]
+
+   - Perform well in [insert drainage] [insert texture] soil
+
+   - Tolerate or benefit from [organic matter quantity] (or can be amended economically)
+
+   - Compatible with [Main soil taxonomy]
+
+ECONOMIC VIABILITY:
+   - High profit potential per acre ($/acre gross revenue)
+
+   - Consider both mainstream crops (suitable for large acreage) AND specialty/novelty crops (high value, smaller acreage)
+
+   - Factor in: market demand, processing requirements, labor needs, and harvest logistics proportional to farm area
+
+DIVERSITY STRATEGY:
+   - Include 4-5 "anchor crops" suitable for large acreage (100-500+ acres each)
+
+   - Include 4-5 "specialty/novelty crops" with premium pricing (10-100 acres each)
+
+   - Include 1-2 "emerging market" crops with high future potential
+
+ORGANIC CONTEXT: Can include regular crops if organic price is significantly higher. Specify if crop should be organic Prioritize crops with:
+Lower pest/disease pressure (reducing input costs)
+Premium organic pricing (2-3x conventional)
+Good weed competition (important for organic management)
+max 3 organic crops, min 1
+
+RESEARCH DEPTH:
+Think beyond obvious choices (corn, soybeans, wheat)
+Consider: medicinal herbs, specialty vegetables, industrial crops, ethnic market crops, agritourism crops
+Include both annual and perennial options
+Consider value-added processing opportunities
+Consider crops which restore nutrients to soil
+Do not include crops such as cannabis or other drugs
+
+OUTPUT FORMAT (for each of 10 crops):
+Crop Name (Scientific Name)
+Soil Match Analysis: [2-3 sentences on why THIS specific soil is ideal - reference pH, drainage, texture, and CEC considerations]
+Economic Profile: [2-3 sentences on market demand, pricing trends, yield expectations, processing/storage requirements]
+Scale Recommendation: [Anchor crop: 100-500 acres | Specialty crop: 10-100 acres | Premium crop: 5-50 acres]
+Estimated Revenue/Acre: $X - $X (provide range with brief justification)
+Key Advantage: [1 sentence on unique selling point for this farm]
+
+Begin with your 10 crop recommendations, ordered from highest to lowest estimated revenue per acre.

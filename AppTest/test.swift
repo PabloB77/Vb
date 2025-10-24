@@ -22,9 +22,10 @@ public class AIManager {
         }
     }
 
-    // NEW: Live streaming version with chunk callback
+    // NEW: Live streaming version with chunk callback and optional thinking filter
     public static func generateNVidiaStreamingLiveGenericThink(
         soilData: String,
+        includeThinking: Bool = true,
         onChunk: @escaping (String) -> Void,
         completion: @escaping (Result<Void, Error>) -> Void
     ) {
@@ -43,11 +44,13 @@ public class AIManager {
         let body: [String: Any] = [
             "model": model,
             "messages": [
+                //["role": "system", "content": "/no_think"],
                 ["role": "user", "content": prompt]
+
             ],
             "temperature": 0,
             "top_p": 1,
-            "max_tokens": 2048,
+            "max_tokens": 10048,
             "frequency_penalty": 0,
             "presence_penalty": 0,
             "stream": true
@@ -55,12 +58,17 @@ public class AIManager {
         
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         
-        let delegate = LiveStreamingDelegate(onChunk: onChunk, completion: completion)
+        let delegate = LiveStreamingDelegate(
+            includeThinking: includeThinking,
+            onChunk: onChunk,
+            completion: completion
+        )
         
         let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
         let task = session.dataTask(with: request)
         task.resume()
     }
+    
     public static func generateNVidiaStreamingLiveGeneric(
         soilData: String,
         onChunk: @escaping (String) -> Void,
@@ -101,7 +109,7 @@ public class AIManager {
         task.resume()
     }
 
-       public static func generateNVidiaStreamingLive(
+    public static func generateNVidiaStreamingLive(
         soilData: String,
         onChunk: @escaping (String) -> Void,
         completion: @escaping (Result<Void, Error>) -> Void
@@ -294,13 +302,17 @@ public class AIManager {
 }
 
 
-// NEW: Live streaming delegate that calls onChunk for each piece
+// NEW: Live streaming delegate that calls onChunk for each piece and filters thinking
 class LiveStreamingDelegate: NSObject, URLSessionDataDelegate {
     var buffer = ""
+    var contentBuffer = ""
+    var insideThinkTag = false
+    let includeThinking: Bool
     let onChunk: (String) -> Void
     let completion: (Result<Void, Error>) -> Void
     
-    init(onChunk: @escaping (String) -> Void, completion: @escaping (Result<Void, Error>) -> Void) {
+    init(includeThinking: Bool = true, onChunk: @escaping (String) -> Void, completion: @escaping (Result<Void, Error>) -> Void) {
+        self.includeThinking = includeThinking
         self.onChunk = onChunk
         self.completion = completion
     }
@@ -326,13 +338,71 @@ class LiveStreamingDelegate: NSObject, URLSessionDataDelegate {
                    let first = choices.first,
                    let delta = first["delta"] as? [String: Any],
                    let content = delta["content"] as? String {
-                    onChunk(content)
+                    
+                    if includeThinking {
+                        onChunk(content)
+                    } else {
+                        processContentCharByChar(content)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func processContentCharByChar(_ content: String) {
+        for char in content {
+            contentBuffer.append(char)
+            
+            // Check if we just added a '>'
+            if char == ">" {
+                // Check if buffer ends with "</think>"
+                if contentBuffer.hasSuffix("</think>") {
+                    // Remove the closing tag from buffer
+                    contentBuffer.removeLast(8) // Remove "</think>"
+                    insideThinkTag = false
+                    contentBuffer = "" // Clear buffer after exiting think tag
+                }
+                // Check if buffer ends with "<think>"
+                else if contentBuffer.hasSuffix("<think>") {
+                    // Remove the opening tag from buffer
+                    contentBuffer.removeLast(7) // Remove "<think>"
+                    // Send any content that was before <think>
+                    if !contentBuffer.isEmpty {
+                        onChunk(contentBuffer)
+                        contentBuffer = ""
+                    }
+                    insideThinkTag = true
+                }
+            }
+            
+            // If not inside think tag and buffer doesn't contain partial tags, send it
+            if !insideThinkTag && !contentBuffer.isEmpty {
+                // Check if buffer might be a partial tag
+                let possibleStartTags = ["<", "<t", "<th", "<thi", "<thin", "<think"]
+                let possibleEndTags = ["<", "</", "</t", "</th", "</thi", "</thin", "</think"]
+                
+                var isPartialTag = false
+                for tag in possibleStartTags + possibleEndTags {
+                    if contentBuffer.hasSuffix(tag) {
+                        isPartialTag = true
+                        break
+                    }
+                }
+                
+                if !isPartialTag {
+                    onChunk(contentBuffer)
+                    contentBuffer = ""
                 }
             }
         }
     }
     
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        // Send any remaining buffer content (in case stream ends without closing tag)
+        if !includeThinking && !contentBuffer.isEmpty && !insideThinkTag {
+            onChunk(contentBuffer)
+        }
+        
         if let error = error {
             completion(.failure(error))
         } else {

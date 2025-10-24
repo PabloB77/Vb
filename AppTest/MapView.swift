@@ -177,6 +177,7 @@ struct SoilSelectionPopup: View {
     @State private var isGeneratingCrops = false
     @State private var hasStartedCrops = false
     @State private var parsedSoilData: ParsedSoilData?
+    @State private var showingCropPopup = false
     
     var body: some View {
         NavigationView {
@@ -229,20 +230,6 @@ struct SoilSelectionPopup: View {
                                 Text("Generating analysis...")
                             }
                             
-                            if !cropRecommendations.isEmpty {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Crop Recommendations")
-                                        .font(.headline)
-                                    Text(cropRecommendations)
-                                        .textSelection(.enabled)
-                                }
-                                .padding()
-                            }
-                            
-                            if isGeneratingCrops {
-                                Text("Generating crop recommendations...")
-                            }
-                            
                             VStack(spacing: 12) {
                                 Button(action: {
                                     dismiss()
@@ -256,6 +243,7 @@ struct SoilSelectionPopup: View {
                                 .buttonStyle(.borderedProminent)
                                 
                                 Button(action: {
+                                    showingCropPopup = true
                                     generateCropRecommendations()
                                 }) {
                                     Text("Get Crop Recommendations")
@@ -278,6 +266,13 @@ struct SoilSelectionPopup: View {
                     }
                 }
             }
+        }
+        .sheet(isPresented: $showingCropPopup) {
+            CropRecommendationsPopup(
+                cropRecommendations: $cropRecommendations,
+                isGenerating: $isGeneratingCrops
+            )
+            .frame(minWidth: 700, minHeight: 600)
         }
         .onAppear {
             fetchGrowingZone()
@@ -536,10 +531,12 @@ Scale Recommendation: [Anchor crop: 100-500 acres | Specialty crop: 10-100 acres
 Estimated Revenue/Acre: $X - $X (provide range with brief justification)
 Key Advantage: [1 sentence on unique selling point for this farm]
 
+***NO EXTRA FANCY FORMATTING, JUST PLAIN TEXT****
+
 Begin with your 10 crop recommendations, ordered from highest to lowest estimated revenue per acre.
 """
         
-        AIManager.generateNVidiaStreamingLiveGenericThink(soilData: prompt) { chunk in
+        AIManager.generateNVidiaStreamingLiveGenericThink(soilData: prompt, includeThinking: false) { chunk in
             DispatchQueue.main.async {
                 if !hasStartedCrops {
                     if chunk.contains("\n") {
@@ -556,6 +553,268 @@ Begin with your 10 crop recommendations, ordered from highest to lowest estimate
         } completion: { result in
             DispatchQueue.main.async {
                 isGeneratingCrops = false
+            }
+        }
+    }
+}
+
+struct CropRecommendationsPopup: View {
+    @Binding var cropRecommendations: String
+    @Binding var isGenerating: Bool
+    @Environment(\.dismiss) private var dismiss
+    @State private var cropImages: [String: NSImage] = [:]
+    @State private var selectedCrop: ParsedCrop?
+    
+    private var parsedCrops: [ParsedCrop] {
+            let lines = cropRecommendations.components(separatedBy: "\n")
+            var crops: [ParsedCrop] = []
+            var currentCrop: ParsedCrop?
+            
+            for line in lines {
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                
+                // Detect crop name line (starts with number or is a standalone name)
+                if trimmed.range(of: "^\\d+\\.\\s*(.+?)\\s*\\(", options: .regularExpression) != nil ||
+                   (trimmed.contains("(") && trimmed.contains(")") && !trimmed.contains(":")) {
+                    
+                    // Save previous crop
+                    if let crop = currentCrop {
+                        crops.append(crop)
+                    }
+                    
+                    // Extract crop name
+                    var cropName = trimmed
+                    if let match = trimmed.range(of: "^\\d+\\.\\s*", options: .regularExpression) {
+                        cropName = String(trimmed[match.upperBound...])
+                    }
+                    if let parenIndex = cropName.firstIndex(of: "(") {
+                        cropName = String(cropName[..<parenIndex]).trimmingCharacters(in: .whitespaces)
+                    }
+                    
+                    currentCrop = ParsedCrop(name: cropName, fullText: trimmed)
+                } else if !trimmed.isEmpty, var crop = currentCrop {
+                    crop.fullText += "\n" + trimmed
+                    currentCrop = crop
+                }
+            }
+            
+            // Add last crop (even if incomplete)
+            if let crop = currentCrop {
+                crops.append(crop)
+            }
+            
+            return crops
+        }
+    
+    var body: some View {
+        NavigationView {
+            VStack {
+                if isGenerating && cropRecommendations.isEmpty {
+                    VStack(spacing: 20) {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                        Text("Generating crop recommendations...")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 12) {
+                            ForEach(parsedCrops) { crop in
+                                CropItemView(crop: crop, selectedCrop: $selectedCrop)
+                                    .onAppear {
+                                        fetchCropImage(for: crop.name)
+                                    }
+                            }
+                            
+                            if isGenerating {
+                                HStack {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                    Text("Generating...")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding()
+                            }
+                        }
+                        .padding()
+                    }
+                }
+            }
+            .navigationTitle("Crop Recommendations")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .sheet(item: $selectedCrop) { crop in
+            CropDetailPopup(crop: crop, cropImage: cropImages[crop.name])
+                .frame(minWidth: 600, minHeight: 500)
+        }
+    }
+    
+    private func fetchCropImage(for cropName: String) {
+        guard cropImages[cropName] == nil else { return }
+        
+        // Clean up crop name for Wikipedia search
+        let cleanName = cropName
+            .trimmingCharacters(in: .whitespaces)
+            .replacingOccurrences(of: " ", with: "_")
+        
+        // Use Wikipedia REST API v1 for better image results
+        let apiURL = "https://en.wikipedia.org/api/rest_v1/page/summary/\(cleanName)"
+        
+        guard let url = URL(string: apiURL.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "") else { return }
+        
+        var request = URLRequest(url: url)
+        request.setValue("SoilMapApp/1.0", forHTTPHeaderField: "User-Agent")
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            guard let data = data else { return }
+            
+            do {
+                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    var imageURLString: String?
+                    
+                    // Try originalimage first (higher quality)
+                    if let originalImage = json["originalimage"] as? [String: Any],
+                       let source = originalImage["source"] as? String {
+                        imageURLString = source
+                    }
+                    // Fall back to thumbnail
+                    else if let thumbnail = json["thumbnail"] as? [String: Any],
+                            let source = thumbnail["source"] as? String {
+                        imageURLString = source
+                    }
+                    
+                    if let imageURLString = imageURLString,
+                       let imageURL = URL(string: imageURLString) {
+                        
+                        // Fetch the actual image
+                        URLSession.shared.dataTask(with: imageURL) { imageData, _, _ in
+                            guard let imageData = imageData, let image = NSImage(data: imageData) else { return }
+                            
+                            DispatchQueue.main.async {
+                                cropImages[cropName] = image
+                            }
+                        }.resume()
+                    }
+                }
+            } catch {
+                print("Error parsing Wikipedia response for \(cropName): \(error)")
+            }
+        }.resume()
+    }
+}
+
+struct ParsedCrop: Identifiable {
+    let id = UUID()
+    let name: String
+    var fullText: String
+    var estimatedRevenue: String = ""
+    
+    init(name: String, fullText: String) {
+        self.name = name
+        self.fullText = fullText
+        self.estimatedRevenue = ParsedCrop.extractRevenue(from: fullText)
+    }
+    
+    private static func extractRevenue(from text: String) -> String {
+        let lines = text.components(separatedBy: "\n")
+        for line in lines {
+            if line.contains("Estimated Revenue/Acre:") || line.contains("Revenue/Acre:") {
+                if let colonIndex = line.firstIndex(of: ":") {
+                    return String(line[line.index(after: colonIndex)...]).trimmingCharacters(in: .whitespaces)
+                }
+            }
+        }
+        return "N/A"
+    }
+}
+
+struct CropItemView: View {
+    let crop: ParsedCrop
+    @Binding var selectedCrop: ParsedCrop?
+    @State private var isHovered = false
+    
+    var body: some View {
+        Button(action: {
+            selectedCrop = crop
+        }) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(crop.name)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text("Estimated Revenue: \(crop.estimatedRevenue)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.secondary)
+            }
+            .padding()
+            .background(isHovered ? Color.blue.opacity(0.05) : Color.clear)
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onHover { hovering in
+            isHovered = hovering
+        }
+    }
+}
+
+struct CropDetailPopup: View {
+    let crop: ParsedCrop
+    let cropImage: NSImage?
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    if let image = cropImage {
+                        HStack {
+                            Spacer()
+                            Image(nsImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(maxWidth: 300, maxHeight: 300)
+                                .cornerRadius(12)
+                                .shadow(radius: 5)
+                            Spacer()
+                        }
+                        .padding(.vertical)
+                    }
+                    
+                    Text(crop.fullText)
+                        .textSelection(.enabled)
+                        .padding()
+                        .background(Color.gray.opacity(0.05))
+                        .cornerRadius(8)
+                }
+                .padding()
+            }
+            .navigationTitle(crop.name)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
             }
         }
     }

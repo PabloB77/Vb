@@ -6,13 +6,23 @@
 //
 
 import SwiftUI
+import Firebase
+import GoogleSignIn
 
 @main
 struct AppTestApp: App {
+    
+    init() {
+        FirebaseApp.configure()
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .preferredColorScheme(.dark)
+                .onOpenURL { url in
+                    GIDSignIn.sharedInstance.handle(url)
+                }
         }
         .windowResizability(.contentSize)
         .defaultSize(width: 800, height: 800)

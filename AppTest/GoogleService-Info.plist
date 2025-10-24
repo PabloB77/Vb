@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>94555501157-cghfcbb07870i9dfnhaijfodm578lqo6.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.94555501157-cghfcbb07870i9dfnhaijfodm578lqo6</string>
+	<key>API_KEY</key>
+	<string>AIzaSyBCAWtlq9CIpgBjSGruxXGM6TeJ1t-86Fs</string>
+	<key>GCM_SENDER_ID</key>
+	<string>94555501157</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>test.high.test</string>
+	<key>PROJECT_ID</key>
+	<string>planning-with-ai-4971a</string>
+	<key>STORAGE_BUCKET</key>
+	<string>planning-with-ai-4971a.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false/>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false/>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true/>
+	<key>IS_GCM_ENABLED</key>
+	<true/>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true/>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:94555501157:ios:15c3a3fd1d04b29da14c8c</string>
+</dict>
+</plist>

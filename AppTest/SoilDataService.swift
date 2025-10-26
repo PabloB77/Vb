@@ -12,7 +12,8 @@ struct SoilDataService {
     private let baseURL = "https://sdmdataaccess.sc.egov.usda.gov"
     
     // MARK: - Data Models
-    struct MapUnit {
+    struct MapUnit: Identifiable {
+        let id = UUID()
         let mukey: String
         let muname: String
         let musym: String
@@ -22,6 +23,14 @@ struct SoilDataService {
         let mapunit_acres_in_aoi: Double
         let mapunit_pct_of_aoi: Double
         let component_pct_of_aoi: Double
+        
+        // Add these with default values since they're not in the original model
+        var irrcapcl: String? { return nil }
+        var drainagecl: String? { return nil }
+        var slopegradwta: String? { return nil }
+        var flodfreqcl: String? { return nil }
+        var erocl: String? { return nil }
+        var runoff: String? { return nil }
     }
     
     struct Component {

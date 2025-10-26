@@ -6,18 +6,24 @@ struct GoogleSignInButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack {
-                Image("google_logo") // Make sure to add a "google_logo" image to your assets
+            HStack(spacing: 12) {
+                Image("google_logo")
                     .resizable()
                     .frame(width: 20, height: 20)
                 Text("Sign in with Google")
-                    .font(.headline)
-                    .foregroundColor(.black)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(AppColorScheme.textPrimary)
             }
-            .padding()
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
             .background(Color.white)
-            .cornerRadius(8)
-            .shadow(radius: 2)
+            .cornerRadius(14)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(AppColorScheme.border, lineWidth: 1.5)
+            )
+            .shadow(color: AppColorScheme.overlayLight, radius: 8, x: 0, y: 4)
         }
+        .buttonStyle(.plain)
     }
 }

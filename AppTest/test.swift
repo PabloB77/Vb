@@ -44,7 +44,7 @@ public class AIManager {
         let body: [String: Any] = [
             "model": model,
             "messages": [
-                //["role": "system", "content": "/no_think"],
+                ["role": "system", "content": "/no_think"],
                 ["role": "user", "content": prompt]
 
             ],

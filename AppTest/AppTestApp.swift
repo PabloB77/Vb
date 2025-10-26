@@ -13,7 +13,16 @@ import GoogleSignIn
 struct AppTestApp: App {
     
     init() {
-        FirebaseApp.configure()
+        // Configure Firebase with error handling
+        do {
+            FirebaseApp.configure()
+        } catch {
+            print("Firebase configuration error: \(error)")
+            // Try to clear cache and reconfigure
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                FirebaseApp.configure()
+            }
+        }
     }
     
     var body: some Scene {

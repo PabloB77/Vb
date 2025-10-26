@@ -179,15 +179,19 @@ struct MainView: View {
         .sheet(isPresented: $showingSettings) {
             SettingsView()
                 .environmentObject(authViewModel)
+                .frame(width: 700, height: 600)
+                .fixedSize()
         }
         .sheet(isPresented: $showingMyGarden) {
             MyGardenView()
                 .environmentObject(authViewModel)
-                .frame(minWidth: 700, minHeight: 600)
+                .frame(width: 700, height: 600)
+                .fixedSize()
         }
         .sheet(isPresented: $showingLearn) {
             LearnView()
-                .frame(minWidth: 800, minHeight: 600)
+                .frame(width: 800, height: 600)
+                .fixedSize()
         }
     }
 }

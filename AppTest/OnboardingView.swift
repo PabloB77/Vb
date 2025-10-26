@@ -39,54 +39,156 @@ struct OnboardingView: View {
                             .foregroundColor(AppColorScheme.textPrimary)
                             .multilineTextAlignment(.center)
                         
-                        VStack(spacing: 12) {
+                        VStack(spacing: 16) {
                             Button(action: {
-                                usage = "Personal Gardening"
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    usage = "Personal Gardening"
+                                }
                             }) {
-                                HStack {
+                                HStack(spacing: 16) {
                                     Image(systemName: "leaf.fill")
-                                        .foregroundColor(AppColorScheme.primary)
+                                        .font(.system(size: 24))
+                                        .foregroundColor(usage == "Personal Gardening" ? .white : AppColorScheme.primary)
+                                        .frame(width: 50, height: 50)
+                                        .background(
+                                            usage == "Personal Gardening" ?
+                                                LinearGradient(
+                                                    gradient: Gradient(colors: [Color.white.opacity(0.3), Color.white.opacity(0.1)]),
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ) :
+                                                LinearGradient(
+                                                    gradient: Gradient(colors: [AppColorScheme.primary.opacity(0.15), AppColorScheme.accent.opacity(0.15)]),
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                )
+                                        )
+                                        .cornerRadius(14)
+                                    
                                     Text("Personal Gardening")
-                                        .fontWeight(.medium)
+                                        .font(.system(size: 17, weight: .semibold))
+                                        .foregroundColor(usage == "Personal Gardening" ? .white : AppColorScheme.textPrimary)
+                                    
                                     Spacer()
+                                    
                                     if usage == "Personal Gardening" {
                                         Image(systemName: "checkmark.circle.fill")
-                                            .foregroundColor(AppColorScheme.primary)
+                                            .font(.system(size: 24))
+                                            .foregroundColor(.white)
                                     }
                                 }
-                                .padding()
-                                .background(usage == "Personal Gardening" ? AppColorScheme.primary.opacity(0.1) : AppColorScheme.buttonSecondary)
-                                .foregroundColor(usage == "Personal Gardening" ? AppColorScheme.primary : AppColorScheme.textPrimary)
-                                .cornerRadius(12)
+                                .padding(20)
+                                .background(
+                                    usage == "Personal Gardening" ?
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color(red: 0.25, green: 0.70, blue: 0.60),
+                                                Color(red: 0.20, green: 0.60, blue: 0.50)
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ) :
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [AppColorScheme.cardBackground]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                )
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(usage == "Personal Gardening" ? AppColorScheme.primary : Color.clear, lineWidth: 2)
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .stroke(
+                                            usage == "Personal Gardening" ?
+                                                Color.clear :
+                                                AppColorScheme.border,
+                                            lineWidth: 1.5
+                                        )
+                                )
+                                .cornerRadius(16)
+                                .shadow(
+                                    color: usage == "Personal Gardening" ?
+                                        AppColorScheme.primary.opacity(0.3) :
+                                        Color.clear,
+                                    radius: 12,
+                                    x: 0,
+                                    y: 6
                                 )
                             }
+                            .buttonStyle(.plain)
                             
                             Button(action: {
-                                usage = "Farming"
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    usage = "Farming"
+                                }
                             }) {
-                                HStack {
+                                HStack(spacing: 16) {
                                     Image(systemName: "tractor.fill")
-                                        .foregroundColor(AppColorScheme.primary)
+                                        .font(.system(size: 24))
+                                        .foregroundColor(usage == "Farming" ? .white : AppColorScheme.primary)
+                                        .frame(width: 50, height: 50)
+                                        .background(
+                                            usage == "Farming" ?
+                                                LinearGradient(
+                                                    gradient: Gradient(colors: [Color.white.opacity(0.3), Color.white.opacity(0.1)]),
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ) :
+                                                LinearGradient(
+                                                    gradient: Gradient(colors: [AppColorScheme.primary.opacity(0.15), AppColorScheme.accent.opacity(0.15)]),
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                )
+                                        )
+                                        .cornerRadius(14)
+                                    
                                     Text("Farming")
-                                        .fontWeight(.medium)
+                                        .font(.system(size: 17, weight: .semibold))
+                                        .foregroundColor(usage == "Farming" ? .white : AppColorScheme.textPrimary)
+                                    
                                     Spacer()
+                                    
                                     if usage == "Farming" {
                                         Image(systemName: "checkmark.circle.fill")
-                                            .foregroundColor(AppColorScheme.primary)
+                                            .font(.system(size: 24))
+                                            .foregroundColor(.white)
                                     }
                                 }
-                                .padding()
-                                .background(usage == "Farming" ? AppColorScheme.primary.opacity(0.1) : AppColorScheme.buttonSecondary)
-                                .foregroundColor(usage == "Farming" ? AppColorScheme.primary : AppColorScheme.textPrimary)
-                                .cornerRadius(12)
+                                .padding(20)
+                                .background(
+                                    usage == "Farming" ?
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color(red: 0.25, green: 0.70, blue: 0.60),
+                                                Color(red: 0.20, green: 0.60, blue: 0.50)
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ) :
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [AppColorScheme.cardBackground]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                )
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(usage == "Farming" ? AppColorScheme.primary : Color.clear, lineWidth: 2)
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .stroke(
+                                            usage == "Farming" ?
+                                                Color.clear :
+                                                AppColorScheme.border,
+                                            lineWidth: 1.5
+                                        )
+                                )
+                                .cornerRadius(16)
+                                .shadow(
+                                    color: usage == "Farming" ?
+                                        AppColorScheme.primary.opacity(0.3) :
+                                        Color.clear,
+                                    radius: 12,
+                                    x: 0,
+                                    y: 6
                                 )
                             }
+                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal)
@@ -138,20 +240,45 @@ struct OnboardingView: View {
                     Button(action: {
                         authViewModel.saveOnboardingData(usage: usage, location: location)
                     }) {
-                        HStack {
+                        HStack(spacing: 12) {
                             if authViewModel.isLoading {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    .scaleEffect(0.8)
+                                    .scaleEffect(0.9)
+                            } else {
+                                Image(systemName: "arrow.right.circle.fill")
+                                    .font(.system(size: 20))
                             }
                             Text("Continue")
                                 .fontWeight(.semibold)
+                                .font(.system(size: 16))
                         }
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(canSave ? Color(red: 0.25, green: 0.70, blue: 0.60) : AppColorScheme.buttonSecondary)
+                        .padding(.vertical, 16)
+                        .background(
+                            canSave ?
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color(red: 0.25, green: 0.70, blue: 0.60),
+                                        Color(red: 0.20, green: 0.60, blue: 0.50)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ) :
+                                LinearGradient(
+                                    gradient: Gradient(colors: [AppColorScheme.buttonSecondary]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                        )
                         .foregroundColor(canSave ? .white : AppColorScheme.textSecondary)
-                        .cornerRadius(12)
+                        .cornerRadius(14)
+                        .shadow(
+                            color: canSave ? AppColorScheme.primary.opacity(0.3) : Color.clear,
+                            radius: 10,
+                            x: 0,
+                            y: 5
+                        )
                     }
                     .disabled(!canSave || authViewModel.isLoading)
                     .padding(.horizontal)

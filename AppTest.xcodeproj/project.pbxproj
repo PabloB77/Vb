@@ -311,7 +311,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = QG3Z4QNCPD;
+				DEVELOPMENT_TEAM = 7R78844U6J;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -342,7 +342,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.nicolasavem.AppTest-com.nicolasavem.AppTest-com.nicolasavem.AppTest-com.nicolasavem.AppTest-com.nicolasavem.AppTest-com.nicolasavem.AppTest";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.nicolasavem.AppTest--com.nicolasavem.AppTest-com.nicolasavem.AppTest-com.nicolasavem.AppTest-com.nicolasavem.AppTest";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -366,7 +366,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = QG3Z4QNCPD;
+				DEVELOPMENT_TEAM = 7R78844U6J;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -397,7 +397,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.nicolasavem.AppTest-com.nicolasavem.AppTest-com.nicolasavem.AppTest-com.nicolasavem.AppTest-com.nicolasavem.AppTest-com.nicolasavem.AppTest";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.nicolasavem.AppTest--com.nicolasavem.AppTest-com.nicolasavem.AppTest-com.nicolasavem.AppTest-com.nicolasavem.AppTest";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;

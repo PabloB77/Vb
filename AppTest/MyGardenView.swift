@@ -9,7 +9,7 @@ struct MyGardenView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 AppColorScheme.backgroundGradient
                     .ignoresSafeArea()
@@ -40,9 +40,11 @@ struct MyGardenView: View {
             }
             .navigationTitle("My Garden")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
-                        dismiss()
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { dismiss() }) {
+                        Text("Done")
+                            .foregroundColor(AppColorScheme.primary)
+                            .fontWeight(.semibold)
                     }
                 }
             }
@@ -83,61 +85,111 @@ struct MyGardenView: View {
 struct PlantCard: View {
     let plant: SavedPlant
     @State private var plantImage: NSImage?
+    @State private var isHovered = false
     
     var body: some View {
-        HStack(spacing: 16) {
-            // Image placeholder
+        HStack(spacing: 20) {
+            // Image placeholder with modern styling
             if let image = plantImage {
                 Image(nsImage: image)
                     .resizable()
-                    .scaledToFit()
-                    .frame(width: 80, height: 80)
-                    .cornerRadius(12)
+                    .scaledToFill()
+                    .frame(width: 90, height: 90)
+                    .cornerRadius(14)
+                    .shadow(color: AppColorScheme.primary.opacity(0.2), radius: 8, x: 0, y: 4)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [AppColorScheme.primary.opacity(0.3), AppColorScheme.accent.opacity(0.3)]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 2
+                            )
+                    )
             } else {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(AppColorScheme.primary.opacity(0.1))
-                    .frame(width: 80, height: 80)
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                AppColorScheme.primary.opacity(0.15),
+                                AppColorScheme.accent.opacity(0.15)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 90, height: 90)
                     .overlay(
                         Image(systemName: "leaf.fill")
-                            .font(.system(size: 32))
+                            .font(.system(size: 36))
                             .foregroundColor(AppColorScheme.primary)
                     )
+                    .shadow(color: AppColorScheme.primary.opacity(0.2), radius: 8, x: 0, y: 4)
             }
             
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(plant.name)
-                    .font(.headline)
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(AppColorScheme.textPrimary)
+                    .lineLimit(2)
                 
                 if let scientific = plant.scientificName {
                     Text(scientific)
-                        .font(.caption)
+                        .font(.system(size: 13))
                         .foregroundColor(AppColorScheme.textSecondary)
+                        .italic()
                 }
                 
-                Text(plant.estimatedRevenue)
-                    .font(.subheadline)
-                    .foregroundColor(AppColorScheme.primary)
-                    .fontWeight(.medium)
+                HStack(spacing: 8) {
+                    Image(systemName: "dollarsign.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(AppColorScheme.primary)
+                    Text(plant.estimatedRevenue)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(AppColorScheme.primary)
+                }
                 
-                Text(formatDate(plant.addedAt))
-                    .font(.caption)
-                    .foregroundColor(AppColorScheme.textSecondary)
+                HStack(spacing: 6) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 12))
+                        .foregroundColor(AppColorScheme.textSecondary)
+                    Text(formatDate(plant.addedAt))
+                        .font(.system(size: 12))
+                        .foregroundColor(AppColorScheme.textSecondary)
+                }
             }
             
             Spacer()
             
             Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(AppColorScheme.textSecondary)
         }
-        .padding()
-        .background(AppColorScheme.cardBackground)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(AppColorScheme.border, lineWidth: 1)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(isHovered ? AppColorScheme.primary.opacity(0.03) : AppColorScheme.cardBackground)
         )
-        .shadow(color: AppColorScheme.overlayLight, radius: 5, x: 0, y: 2)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(
+                    isHovered ? AppColorScheme.primary.opacity(0.2) : AppColorScheme.border,
+                    lineWidth: isHovered ? 2 : 1
+                )
+        )
+        .shadow(
+            color: isHovered ? AppColorScheme.primary.opacity(0.1) : AppColorScheme.overlayMedium,
+            radius: isHovered ? 12 : 6,
+            x: 0,
+            y: 4
+        )
+        .onHover { hovering in
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                isHovered = hovering
+            }
+        }
     }
     
     private func formatDate(_ date: Date) -> String {
@@ -155,7 +207,7 @@ struct PlantDetailView: View {
     @State private var plantImage: NSImage?
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     // Header
@@ -199,9 +251,11 @@ struct PlantDetailView: View {
             }
             .navigationTitle(plant.name)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        dismiss()
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { dismiss() }) {
+                        Text("Done")
+                            .foregroundColor(AppColorScheme.primary)
+                            .fontWeight(.semibold)
                     }
                 }
                 

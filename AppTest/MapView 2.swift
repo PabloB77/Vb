@@ -2,15 +2,78 @@ import SwiftUI
 import MapKit
 import FirebaseAuth
 
+// MARK: - Custom Transition Modifiers
+struct SlideFromBottom: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+}
+
+struct ScaleTransition: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .transition(
+                .asymmetric(
+                    insertion: .scale(scale: 0.9).combined(with: .opacity),
+                    removal: .scale(scale: 1.1).combined(with: .opacity)
+                )
+            )
+    }
+}
+
+struct PopTransition: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .transition(
+                .asymmetric(
+                    insertion: .scale(scale: 0.85).combined(with: .opacity),
+                    removal: .scale(scale: 0.85).combined(with: .opacity)
+                )
+            )
+    }
+}
+
+// MARK: - Animated View Modifier
+struct AnimatedAppear: ViewModifier {
+    @State private var animate = false
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(animate ? 1.0 : 0.95)
+            .opacity(animate ? 1.0 : 0.0)
+            .onAppear {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                    animate = true
+                }
+            }
+    }
+}
+
+// MARK: - Staggered Appear Animation
+struct StaggeredAppear: ViewModifier {
+    let delay: Double
+    
+    func body(content: Content) -> some View {
+        content
+            .transition(
+                .asymmetric(
+                    insertion: .opacity.combined(with: .move(edge: .bottom)).animation(.spring(response: 0.5, dampingFraction: 0.75).delay(delay)),
+                    removal: .opacity
+                )
+            )
+    }
+}
+
 // MARK: - Design System
 private struct DesignSystem {
-    static let cornerRadius: CGFloat = 12
+    static let cornerRadius: CGFloat = 20  // Increased for more rounded look
     static let smallPadding: CGFloat = 8
     static let mediumPadding: CGFloat = 16
     static let largePadding: CGFloat = 24
-    static let shadowRadius: CGFloat = 8
-    static let shadowY: CGFloat = 4
-    static let cardBackgroundOpacity: Double = 0.9
+    static let shadowRadius: CGFloat = 12  // Increased for softer shadows
+    static let shadowY: CGFloat = 6
+    static let cardBackgroundOpacity: Double = 0.95
     
     static let primaryColor = AppColorScheme.primary
     static let secondaryColor = AppColorScheme.accent
@@ -23,7 +86,7 @@ private struct DesignSystem {
 
 // MARK: - Card View Modifier
 struct CardView: ViewModifier {
-    var backgroundColor: Color = AppColorScheme.cardBackground.opacity(0.95)
+    var backgroundColor: Color = AppColorScheme.cardBackground.opacity(0.98)
     var cornerRadius: CGFloat = DesignSystem.cornerRadius
     
     func body(content: Content) -> some View {
@@ -33,16 +96,75 @@ struct CardView: ViewModifier {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(backgroundColor)
                     .shadow(
-                        color: AppColorScheme.overlayLight,
-                        radius: DesignSystem.shadowRadius,
+                        color: Color.black.opacity(0.08),
+                        radius: 12,
                         x: 0,
-                        y: DesignSystem.shadowY
+                        y: 4
                     )
             )
             .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(AppColorScheme.border, lineWidth: 1)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(AppColorScheme.border.opacity(0.3), lineWidth: 0.5)
             )
+    }
+}
+
+// MARK: - Wavy Background Decoration
+struct WavyBackground: View {
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                // Top wave
+                Path { path in
+                    let width = geometry.size.width
+                    let height = geometry.size.height
+                    
+                    path.move(to: CGPoint(x: 0, y: height * 0.7))
+                    
+                    let waveLength = width / 2
+                    let amplitude: CGFloat = 30
+                    
+                    for x in stride(from: 0, to: width + 10, by: 1) {
+                        let relativeX = x / waveLength
+                        let y = height * 0.7 + amplitude * sin((relativeX * 2 * .pi))
+                        path.addLine(to: CGPoint(x: x, y: y))
+                    }
+                    
+                    path.addLine(to: CGPoint(x: width, y: height))
+                    path.addLine(to: CGPoint(x: 0, y: height))
+                    path.closeSubpath()
+                }
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            AppColorScheme.primary.opacity(0.08),
+                            AppColorScheme.accent.opacity(0.05)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Circular Accent View
+struct CircularAccent: View {
+    var body: some View {
+        Circle()
+            .fill(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        AppColorScheme.primary.opacity(0.3),
+                        AppColorScheme.accent.opacity(0.2)
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .frame(width: 100, height: 100)
+            .blur(radius: 20)
     }
 }
 
@@ -57,17 +179,18 @@ struct SectionHeader: View {
     }
     
     var body: some View {
-        HStack(spacing: DesignSystem.smallPadding) {
+        HStack(spacing: 10) {
             if let systemImage = systemImage {
                 Image(systemName: systemImage)
-                    .foregroundColor(DesignSystem.accentColor)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(AppColorScheme.primary)
             }
             Text(title)
-                .font(.headline)
+                .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(DesignSystem.textPrimary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.bottom, DesignSystem.smallPadding / 2)
+        .padding(.bottom, 8)
     }
 }
 
@@ -76,11 +199,14 @@ struct LoadingView: View {
     let title: String
     
     var body: some View {
-        HStack(spacing: DesignSystem.mediumPadding) {
+        HStack(spacing: 16) {
             ProgressView()
-                .progressViewStyle(CircularProgressViewStyle())
+                .progressViewStyle(CircularProgressViewStyle(tint: AppColorScheme.primary))
+                .scaleEffect(1.1)
             Text(title)
-                .foregroundColor(DesignSystem.textSecondary)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(AppColorScheme.textPrimary)
         }
         .padding()
         .frame(maxWidth: .infinity)
@@ -163,11 +289,17 @@ struct MapView: View {
             }
             .sheet(isPresented: $showingSoilPopup) {
                 SoilSelectionPopup(soilData: soilData, selectedRectangle: selectedRectangle, showingSoilDataPopup: $showingSoilDataPopup, cropRetrievalSystem: cropRetrievalSystem)
-                    .frame(minWidth: 500, minHeight: 600)
+                    .frame(width: 700, height: 600)
+                    .fixedSize()
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingSoilDataPopup) {
                 SoilDataPopup(soilData: soilData)
-                    .frame(minWidth: 600, minHeight: 500)
+                    .frame(width: 600, height: 500)
+                    .fixedSize()
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
             }
         }
     }
@@ -274,20 +406,35 @@ struct SoilSelectionPopup: View {
     let cropRetrievalSystem: CropRetrievalSystem
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 AppColorScheme.backgroundGradient
                     .ignoresSafeArea()
                 
+                // Decorative wavy background
+                WavyBackground()
+                    .ignoresSafeArea(edges: .bottom)
+                
+                // Floating circular accents
+                VStack {
+                    HStack {
+                        Spacer()
+                        CircularAccent()
+                    }
+                    .padding(.trailing, 40)
+                    .padding(.top, 50)
+                    Spacer()
+                }
+                
                 if soilData.isEmpty {
                     emptyStateView
                 } else {
-                    ScrollView {
-                        VStack(spacing: DesignSystem.mediumPadding) {
-                            // Growing Zone Card
-                            if !growingZone.isEmpty || isLoadingZone {
-                                VStack(alignment: .leading, spacing: DesignSystem.smallPadding) {
-                                    SectionHeader("Growing Zone", systemImage: "map")
+                ScrollView {
+                    VStack(spacing: DesignSystem.mediumPadding) {
+                        // Growing Zone Card
+                        if !growingZone.isEmpty || isLoadingZone {
+                            VStack(alignment: .leading, spacing: DesignSystem.smallPadding) {
+                                SectionHeader("Growing Zone", systemImage: "map")
                                     
                                     if isLoadingZone {
                                         LoadingView(title: "Detecting growing zone...")
@@ -306,6 +453,7 @@ struct SoilSelectionPopup: View {
                                     }
                                 }
                                 .modifier(CardView())
+                                .modifier(StaggeredAppear(delay: 0.0))
                             }
                             
                             // Soil Analysis Card
@@ -323,6 +471,7 @@ struct SoilSelectionPopup: View {
                                     }
                                 }
                                 .modifier(CardView())
+                                .modifier(StaggeredAppear(delay: 0.15))
                             }
                             
                             // AI Analysis Card
@@ -340,6 +489,7 @@ struct SoilSelectionPopup: View {
                                     }
                                 }
                                 .modifier(CardView())
+                                .modifier(StaggeredAppear(delay: 0.3))
                             }
                             
                             // Action Buttons
@@ -351,15 +501,27 @@ struct SoilSelectionPopup: View {
                                     }
                                 }) {
                                     HStack {
-                                        Image(systemName: "info.circle")
+                                        Image(systemName: "info.circle.fill")
                                         Text("View Detailed Soil Data")
+                                            .fontWeight(.semibold)
                                     }
                                     .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(DesignSystem.primaryColor)
+                                    .padding(.vertical, 16)
+                                    .background(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                AppColorScheme.primary,
+                                                AppColorScheme.primaryDark
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
                                     .foregroundColor(.white)
-                                    .cornerRadius(DesignSystem.cornerRadius)
+                                    .cornerRadius(16)
+                                    .shadow(color: AppColorScheme.primary.opacity(0.4), radius: 10, x: 0, y: 6)
                                 }
+                                .buttonStyle(.plain)
                                 
                                 Button(action: {
                                     showingCropPopup = true
@@ -373,13 +535,25 @@ struct SoilSelectionPopup: View {
                                             Image(systemName: "leaf.arrow.triangle.circlepath")
                                         }
                                         Text("Get Crop Recommendations")
+                                            .fontWeight(.semibold)
                                     }
                                     .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(DesignSystem.secondaryColor)
+                                    .padding(.vertical, 16)
+                                    .background(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                AppColorScheme.accent,
+                                                AppColorScheme.accentLight
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
                                     .foregroundColor(.white)
-                                    .cornerRadius(DesignSystem.cornerRadius)
+                                    .cornerRadius(16)
+                                    .shadow(color: AppColorScheme.accent.opacity(0.4), radius: 10, x: 0, y: 6)
                                 }
+                                .buttonStyle(.plain)
                                 .disabled(isGeneratingCrops || isGeneratingRAG || parsedSoilData == nil || growingZone.isEmpty)
                                 .opacity((isGeneratingCrops || isGeneratingRAG || parsedSoilData == nil || growingZone.isEmpty) ? 0.6 : 1)
                             }
@@ -394,9 +568,11 @@ struct SoilSelectionPopup: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        dismiss()
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { dismiss() }) {
+                        Text("Done")
+                            .foregroundColor(AppColorScheme.primary)
+                            .fontWeight(.semibold)
                     }
                 }
             }
@@ -405,7 +581,10 @@ struct SoilSelectionPopup: View {
                     cropRecommendations: $cropRecommendations,
                     isGenerating: $isGeneratingCrops
                 )
-                .frame(minWidth: 700, minHeight: 600)
+                .frame(width: 700, height: 600)
+                .fixedSize()
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
             }
             .onAppear {
                 fetchGrowingZone()
@@ -414,7 +593,7 @@ struct SoilSelectionPopup: View {
         }
     }
     
-    private var emptyStateView: some View {
+    var emptyStateView: some View {
         VStack(spacing: DesignSystem.mediumPadding) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 48))
@@ -437,7 +616,7 @@ struct SoilSelectionPopup: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
-    private func runRAGPipeline() {
+    func runRAGPipeline() {
         guard let parsed = parsedSoilData, !parsed.soilTexture.isEmpty else {
             isGeneratingRAG = false
             return
@@ -500,7 +679,7 @@ struct SoilSelectionPopup: View {
         }
     }
     
-    private func fetchGrowingZone() {
+    func fetchGrowingZone() {
         isLoadingZone = true
         
         guard let rect = selectedRectangle else {
@@ -533,7 +712,7 @@ struct SoilSelectionPopup: View {
         }
     }
     
-    private func fetchZoneFromAPI(zipCode: String) {
+    func fetchZoneFromAPI(zipCode: String) {
         guard let url = URL(string: "https://phzmapi.org/\(zipCode).json") else {
             isLoadingZone = false
             return
@@ -558,7 +737,7 @@ struct SoilSelectionPopup: View {
         }.resume()
     }
     
-    private func generateSoilDescription() {
+    func generateSoilDescription() {
         isGeneratingDescription = true
         soilDescription = ""
         
@@ -598,7 +777,7 @@ Goal: Write one brief paragraph summarizing the overall landscape and soil quali
         }
     }
     
-    private func generateSoilAnalysis() {
+    func generateSoilAnalysis() {
         isGenerating = true
         aiOutput = ""
         
@@ -635,7 +814,7 @@ Goal: Write one brief paragraph summarizing the overall landscape and soil quali
         }
     }
     
-    private func parseSoilData() {
+    func parseSoilData() {
         let lines = aiOutput.components(separatedBy: "\n")
         var parsed = ParsedSoilData()
         
@@ -677,7 +856,7 @@ Goal: Write one brief paragraph summarizing the overall landscape and soil quali
         print("DEBUG Parsed Soil Data: Texture=\(parsed.soilTexture), Drainage=\(parsed.drainage), pH=\(parsed.pH)")
     }
     
-    private func generateCropRecommendations() {
+    func generateCropRecommendations() {
         guard let parsed = parsedSoilData, !growingZone.isEmpty, !ragOutput.isEmpty else { return }
         
         isGeneratingCrops = true
@@ -833,7 +1012,7 @@ struct CropRecommendationsPopup: View {
         }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 AppColorScheme.backgroundGradient
                     .ignoresSafeArea()
@@ -852,6 +1031,7 @@ struct CropRecommendationsPopup: View {
                         VStack(alignment: .leading, spacing: 12) {
                             ForEach(parsedCrops) { crop in
                                 CropItemView(crop: crop, selectedCrop: $selectedCrop)
+                                    .transition(.opacity.combined(with: .move(edge: .bottom)))
                                     .onAppear {
                                         fetchCropImage(for: crop.name)
                                     }
@@ -875,19 +1055,24 @@ struct CropRecommendationsPopup: View {
             .navigationTitle("Crop Recommendations")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Done") {
-                        dismiss()
+                    Button(action: { dismiss() }) {
+                        Text("Done")
+                            .foregroundColor(AppColorScheme.primary)
+                            .fontWeight(.semibold)
                     }
                 }
             }
         }
         .sheet(item: $selectedCrop) { crop in
             CropDetailPopup(crop: crop, cropImage: cropImages[crop.name])
-                .frame(minWidth: 600, minHeight: 500)
+                .frame(width: 600, height: 500)
+                .fixedSize()
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
         }
     }
     
-    private func fetchCropImage(for cropName: String) {
+    func fetchCropImage(for cropName: String) {
         guard cropImages[cropName] == nil else { return }
         
         let cleanName = cropName
@@ -976,34 +1161,53 @@ struct CropItemView: View {
         Button(action: {
             selectedCrop = crop
         }) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(crop.name)
-                        .font(.headline)
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(AppColorScheme.primary)
-                        .underline()
+                        .lineLimit(2)
                     
-                    Text("Estimated Revenue: \(crop.estimatedRevenue)")
-                        .font(.subheadline)
-                        .foregroundColor(AppColorScheme.textSecondary)
+                    HStack(spacing: 8) {
+                        Image(systemName: "dollarsign.circle.fill")
+                            .font(.system(size: 14))
+                        Text("Revenue: \(crop.estimatedRevenue)")
+                            .font(.subheadline)
+                            .foregroundColor(AppColorScheme.textSecondary)
+                    }
                 }
                 
                 Spacer()
                 
                 Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(AppColorScheme.textSecondary)
+                    .padding(.leading, 8)
             }
             .padding()
-            .background(isHovered ? AppColorScheme.primary.opacity(0.05) : Color.clear)
-            .cornerRadius(8)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(isHovered ? AppColorScheme.primary.opacity(0.08) : AppColorScheme.cardBackground)
+            )
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(AppColorScheme.border, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(
+                        isHovered ? AppColorScheme.primary.opacity(0.3) : AppColorScheme.border,
+                        lineWidth: isHovered ? 2 : 1
+                    )
+            )
+            .shadow(
+                color: isHovered ? AppColorScheme.primary.opacity(0.1) : Color.clear,
+                radius: 8,
+                x: 0,
+                y: 4
             )
         }
         .buttonStyle(PlainButtonStyle())
         .onHover { hovering in
-            isHovered = hovering
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                isHovered = hovering
+            }
         }
     }
 }
@@ -1018,13 +1222,68 @@ struct CropDetailPopup: View {
     @State private var showGardenAdded = false
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 AppColorScheme.backgroundGradient
                     .ignoresSafeArea()
                 
+                // Decorative wavy background
+                WavyBackground()
+                    .ignoresSafeArea(edges: .bottom)
+                
+                // Floating circular accents
+                VStack {
+                    HStack {
+                        CircularAccent()
+                        Spacer()
+                    }
+                    .padding(.leading, 40)
+                    .padding(.top, 100)
+                    Spacer()
+                }
+                
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 24) {
+                        // Crop Title with decorative elements
+                        HStack(alignment: .center, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(crop.name)
+                                    .font(.system(size: 42, weight: .bold, design: .rounded))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [AppColorScheme.primary, AppColorScheme.accent]),
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                
+                                Text("Click to view details")
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(AppColorScheme.textSecondary)
+                            }
+                            
+                            Spacer()
+                            
+                            // Decorative icons
+                            HStack(spacing: 16) {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [AppColorScheme.primary.opacity(0.2), AppColorScheme.accent.opacity(0.2)]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 50, height: 50)
+                                    .overlay(
+                                        Image(systemName: "leaf.fill")
+                                            .foregroundColor(AppColorScheme.primary)
+                                            .font(.system(size: 24))
+                                    )
+                            }
+                        }
+                        .padding(.horizontal)
+                        
                         if let image = cropImage {
                         HStack {
                             Spacer()
@@ -1032,8 +1291,19 @@ struct CropDetailPopup: View {
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .frame(maxWidth: 300, maxHeight: 300)
-                                .cornerRadius(12)
-                                .shadow(radius: 5)
+                                .cornerRadius(16)
+                                .shadow(color: AppColorScheme.primary.opacity(0.2), radius: 15, x: 0, y: 8)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: [AppColorScheme.primary.opacity(0.3), AppColorScheme.accent.opacity(0.3)]),
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 2
+                                        )
+                                )
                             Spacer()
                         }
                         .padding(.vertical)
@@ -1041,9 +1311,26 @@ struct CropDetailPopup: View {
                     
                     Text(crop.fullText)
                         .textSelection(.enabled)
-                        .padding()
-                        .background(Color.gray.opacity(0.05))
-                        .cornerRadius(8)
+                        .foregroundColor(AppColorScheme.textPrimary)
+                        .font(.system(size: 15))
+                        .lineSpacing(6)
+                        .padding(20)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(AppColorScheme.cardBackground)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .strokeBorder(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: [AppColorScheme.borderLight, AppColorScheme.border]),
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1
+                                        )
+                                )
+                        )
+                        .shadow(color: AppColorScheme.overlayLight, radius: 4, x: 0, y: 2)
                     
                     // Add to Garden Button
                     Button(action: {
@@ -1055,17 +1342,35 @@ struct CropDetailPopup: View {
                             }
                         }
                     }) {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
+                        HStack(spacing: 10) {
+                            if showGardenAdded {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 20))
+                            } else {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 20))
+                            }
                             Text(showGardenAdded ? "Added to Garden!" : "Add to My Garden")
                                 .fontWeight(.semibold)
+                                .font(.system(size: 16))
                         }
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(showGardenAdded ? Color(red: 0.25, green: 0.70, blue: 0.60) : Color(red: 0.25, green: 0.70, blue: 0.60))
+                        .padding(.vertical, 16)
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: showGardenAdded ? 
+                                    [Color(red: 0.35, green: 0.80, blue: 0.70), Color(red: 0.25, green: 0.70, blue: 0.60)] :
+                                    [Color(red: 0.25, green: 0.70, blue: 0.60), Color(red: 0.20, green: 0.60, blue: 0.50)]
+                                ),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                         .foregroundColor(.white)
                         .cornerRadius(12)
+                        .shadow(color: AppColorScheme.primary.opacity(0.3), radius: 8, x: 0, y: 4)
                     }
+                    .buttonStyle(.plain)
                     .disabled(showGardenAdded)
                     
                     // Gardening Videos Section (only show if user selected gardening)
@@ -1080,7 +1385,8 @@ struct CropDetailPopup: View {
                                 Button(showGardeningVideos ? "Hide Videos" : "Show Videos") {
                                     showGardeningVideos.toggle()
                                 }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(.borderedProminent)
+                                .tint(AppColorScheme.primary)
                             }
                             
                             if showGardeningVideos {
@@ -1096,18 +1402,20 @@ struct CropDetailPopup: View {
                     .padding()
                 }
             }
-            .navigationTitle(crop.name)
+            .navigationTitle("")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Done") {
-                        dismiss()
+                    Button(action: { dismiss() }) {
+                        Text("Done")
+                            .foregroundColor(AppColorScheme.primary)
+                            .fontWeight(.semibold)
                     }
                 }
             }
         }
     }
     
-    private var shouldShowGardeningVideos: Bool {
+    var shouldShowGardeningVideos: Bool {
         // Temporarily show videos for all users for testing
         return true
         // Original logic: return authViewModel.userUsage.lowercased().contains("gardening")
@@ -1146,7 +1454,7 @@ struct SoilDataPopup: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 AppColorScheme.backgroundGradient
                     .ignoresSafeArea()
@@ -1201,6 +1509,7 @@ struct SoilDataPopup: View {
                                                 selectedSoil = unit
                                                 showingDetail = true
                                             }
+                                            .modifier(StaggeredAppear(delay: Double(index) * 0.1))
                                         }
                                     }
                                 }
@@ -1210,7 +1519,11 @@ struct SoilDataPopup: View {
                             // Minor Soils Section
                             if !minorSoils.isEmpty {
                                 VStack(alignment: .leading, spacing: DesignSystem.smallPadding) {
-                                    Button(action: { withAnimation { showMinorSoils.toggle() } }) {
+                                    Button(action: { 
+                                        withAnimation(.easeInOut(duration: 0.2)) { 
+                                            showMinorSoils.toggle() 
+                                        } 
+                                    }) {
                                         HStack {
                                             SectionHeader("Minor Soil Types (\(String(format: "%.1f", totalMinorPercentage))%)", 
                                                         systemImage: showMinorSoils ? "chevron.down" : "chevron.right")
@@ -1228,9 +1541,10 @@ struct SoilDataPopup: View {
                                                     selectedSoil = unit
                                                     showingDetail = true
                                                 }
+                                                .modifier(StaggeredAppear(delay: Double(index) * 0.1))
                                             }
                                         }
-                                        .transition(.opacity.combined(with: .move(edge: .top)))
+                                        .transition(.opacity)
                                     }
                                 }
                                 .modifier(CardView())
@@ -1256,19 +1570,25 @@ struct SoilDataPopup: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        dismiss()
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { dismiss() }) {
+                        Text("Done")
+                            .foregroundColor(AppColorScheme.primary)
+                            .fontWeight(.semibold)
                     }
                 }
             }
             .sheet(item: $selectedSoil) { soil in
                 SoilDetailView(soil: soil)
+                    .frame(width: 600, height: 500)
+                    .fixedSize()
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
             }
         }
     }
     
-    private var emptyStateView: some View {
+    var emptyStateView: some View {
         VStack(spacing: DesignSystem.mediumPadding) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 48))
@@ -1368,66 +1688,135 @@ private struct LegendItem: View {
 private struct SoilDetailView: View {
     let soil: SoilDataService.MapUnit
     @Environment(\.dismiss) private var dismiss
+    @State private var aiDescription = ""
+    @State private var isGeneratingDescription = false
     
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: DesignSystem.mediumPadding) {
-                    // Header
-                    VStack(alignment: .leading, spacing: DesignSystem.smallPadding) {
-                        Text(soil.muname)
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(DesignSystem.primaryColor)
+        NavigationStack {
+            ZStack {
+                AppColorScheme.backgroundGradient
+                    .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(alignment: .leading, spacing: DesignSystem.mediumPadding) {
+                        // Header
+                        VStack(alignment: .leading, spacing: DesignSystem.smallPadding) {
+                            Text(soil.muname)
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(DesignSystem.primaryColor)
+                            
+                            Text(soil.taxclname)
+                                .font(.subheadline)
+                                .foregroundColor(DesignSystem.textSecondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.bottom, DesignSystem.smallPadding)
+                        .modifier(AnimatedAppear())
                         
-                        Text(soil.taxclname)
-                            .font(.subheadline)
-                            .foregroundColor(DesignSystem.textSecondary)
+                        // AI Description
+                        if isGeneratingDescription || !aiDescription.isEmpty {
+                            VStack(alignment: .leading, spacing: DesignSystem.smallPadding) {
+                                SectionHeader("Description", systemImage: "sparkles")
+                                
+                                if isGeneratingDescription {
+                                    LoadingView(title: "Generating description...")
+                                } else if !aiDescription.isEmpty {
+                                    Text(aiDescription)
+                                        .font(.body)
+                                        .foregroundColor(DesignSystem.textPrimary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                            .modifier(CardView())
+                        }
+                        
+                        // Stats
+                        VStack(alignment: .leading, spacing: DesignSystem.smallPadding) {
+                            SectionHeader("Statistics", systemImage: "chart.bar")
+                            
+                            HStack(spacing: DesignSystem.mediumPadding) {
+                                StatItem(value: "\(String(format: "%.1f", soil.component_pct_of_aoi))%", 
+                                        label: "Area Coverage")
+                                
+                                Divider()
+                                    .frame(height: 40)
+                                
+                                StatItem(value: soil.irrcapcl?.capitalized ?? "N/A", 
+                                        label: "Irrigation")
+                                
+                                Divider()
+                                    .frame(height: 40)
+                                
+                                StatItem(value: soil.drainagecl?.capitalized ?? "N/A", 
+                                        label: "Drainage")
+                            }
+                        }
+                        .modifier(CardView())
+                        
+                        // Details
+                        VStack(alignment: .leading, spacing: DesignSystem.smallPadding) {
+                            SectionHeader("Properties", systemImage: "info.circle")
+                            
+                            VStack(alignment: .leading, spacing: DesignSystem.smallPadding) {
+                                DetailRow(label: "Slope:", value: soil.slopegradwta?.capitalized ?? "N/A")
+                                DetailRow(label: "Flooding:", value: soil.flodfreqcl?.capitalized ?? "None")
+                                DetailRow(label: "Erosion:", value: soil.erocl?.capitalized ?? "N/A")
+                                DetailRow(label: "Runoff:", value: soil.runoff?.capitalized ?? "N/A")
+                            }
+                        }
+                        .modifier(CardView())
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.bottom, DesignSystem.smallPadding)
-                    
-                    // Stats
-                    HStack(spacing: DesignSystem.mediumPadding) {
-                        StatItem(value: "\(String(format: "%.1f", soil.component_pct_of_aoi))%", 
-                                label: "Area Coverage")
-                        
-                        Divider()
-                            .frame(height: 40)
-                        
-                        StatItem(value: soil.irrcapcl?.capitalized ?? "N/A", 
-                                label: "Irrigation")
-                        
-                        Divider()
-                            .frame(height: 40)
-                        
-                        StatItem(value: soil.drainagecl?.capitalized ?? "N/A", 
-                                label: "Drainage")
-                    }
-                    .padding(.vertical, DesignSystem.smallPadding)
-                    
-                    // Details
-                    VStack(alignment: .leading, spacing: DesignSystem.smallPadding) {
-                        DetailRow(label: "Slope:", value: soil.slopegradwta?.capitalized ?? "N/A")
-                        DetailRow(label: "Flooding:", value: soil.flodfreqcl?.capitalized ?? "None")
-                        DetailRow(label: "Erosion:", value: soil.erocl?.capitalized ?? "N/A")
-                        DetailRow(label: "Runoff:", value: soil.runoff?.capitalized ?? "N/A")
-                    }
-                    .padding(.vertical, DesignSystem.smallPadding)
-                    
-                    Spacer()
+                    .padding(DesignSystem.mediumPadding)
                 }
-                .padding(DesignSystem.mediumPadding)
             }
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
-                        dismiss()
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { dismiss() }) {
+                        Text("Done")
+                            .foregroundColor(AppColorScheme.primary)
+                            .fontWeight(.semibold)
                     }
                 }
+            }
+            .onAppear {
+                generateSoilDescription()
+            }
+        }
+    }
+    
+    func generateSoilDescription() {
+        isGeneratingDescription = true
+        aiDescription = ""
+        
+        let soilDataString = """
+        Soil Name: \(soil.muname)
+        Taxonomy: \(soil.taxclname)
+        Component % of AOI: \(String(format: "%.1f", soil.component_pct_of_aoi))%
+        Irrigation: \(soil.irrcapcl ?? "N/A")
+        Drainage: \(soil.drainagecl ?? "N/A")
+        Slope: \(soil.slopegradwta ?? "N/A")
+        Flooding Frequency: \(soil.flodfreqcl ?? "None")
+        Erosion: \(soil.erocl ?? "N/A")
+        Runoff: \(soil.runoff ?? "N/A")
+        """
+        
+        let prompt = """
+        Provide a brief 2-3 sentence description of this soil type, focusing on its characteristics and suitability for growing crops. Be concise and practical.
+        
+        \(soilDataString)
+        """
+        
+        AIManager.generateNVidiaStreamingLiveGenericThink(soilData: prompt, includeThinking: false) { chunk in
+            DispatchQueue.main.async {
+                aiDescription += chunk
+            }
+        } completion: { _ in
+            DispatchQueue.main.async {
+                isGeneratingDescription = false
             }
         }
     }

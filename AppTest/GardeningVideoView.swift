@@ -19,9 +19,10 @@ struct GardeningVideoView: View {
                 VStack(alignment: .leading) {
                     Text("Gardening Videos")
                         .font(.headline)
+                        .foregroundColor(AppColorScheme.textPrimary)
                     Text("Learn how to grow \(cropName)")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColorScheme.textSecondary)
                 }
                 
                 Spacer()
@@ -198,11 +199,11 @@ struct CompactVideoCardView: View {
                         .fontWeight(.medium)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColorScheme.textPrimary)
                     
                     Text(video.channelTitle)
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColorScheme.textSecondary)
                         .lineLimit(1)
                     
                     // Difficulty Badge
@@ -247,11 +248,11 @@ struct GardeningVideoCardView: View {
                         .font(.headline)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColorScheme.textPrimary)
                     
                     Text(video.channelTitle)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColorScheme.textSecondary)
                     
                     HStack {
                         // Category Badge
@@ -287,15 +288,15 @@ struct GardeningVideoCardView: View {
                     HStack {
                         Text(formatViewCount(video.viewCount))
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(AppColorScheme.textSecondary)
                         
                         Text("•")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(AppColorScheme.textSecondary)
                         
                         Text(formatDate(video.publishedAt))
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(AppColorScheme.textSecondary)
                     }
                 }
                 
@@ -312,7 +313,7 @@ struct GardeningVideoCardView: View {
                 }
             }
             .padding()
-            .background(Color.primary.colorInvert())
+            .background(AppColorScheme.cardBackground)
             .cornerRadius(12)
             .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
         }
@@ -351,7 +352,7 @@ struct VideoDetailView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 20) {
                 // Video Thumbnail (placeholder for actual video player)
                 AsyncImage(url: URL(string: video.thumbnailURL)) { image in

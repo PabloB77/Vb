@@ -67,33 +67,45 @@ struct SettingsRow: View {
     let title: String
     let subtitle: String
     let action: () -> Void
+    @State private var isHovered = false
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: 16) {
                 Image(systemName: icon)
-                    .foregroundColor(.blue)
-                    .frame(width: 24)
+                    .font(.system(size: 18))
+                    .foregroundColor(AppColorScheme.primary)
+                    .frame(width: 32)
                 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.body)
-                        .foregroundColor(.primary)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(AppColorScheme.textPrimary)
                     
                     Text(subtitle)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 13))
+                        .foregroundColor(AppColorScheme.textSecondary)
                 }
                 
                 Spacer()
                 
                 Image(systemName: "chevron.right")
-                    .foregroundColor(.secondary)
-                    .font(.caption)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(AppColorScheme.textSecondary)
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(isHovered ? AppColorScheme.primary.opacity(0.05) : Color.clear)
+            )
         }
         .buttonStyle(PlainButtonStyle())
+        .onHover { hovering in
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                isHovered = hovering
+            }
+        }
     }
 }
 
@@ -106,7 +118,7 @@ struct SettingsView: View {
     @State private var showingSignOutConfirmation = false
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
                     // Profile Section
@@ -126,12 +138,15 @@ struct SettingsView: View {
                 }
                 .padding()
             }
-            .frame(minWidth: 600, minHeight: 500)
+            .frame(width: 700, height: 600)
+            .fixedSize()
             .navigationTitle("Settings")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
-                        dismiss()
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { dismiss() }) {
+                        Text("Done")
+                            .foregroundColor(AppColorScheme.primary)
+                            .fontWeight(.semibold)
                     }
                 }
             }
@@ -139,7 +154,8 @@ struct SettingsView: View {
         .sheet(isPresented: $showingEditProfile) {
             EditProfileView()
                 .environmentObject(authViewModel)
-                .frame(minWidth: 1000, minHeight: 800)
+                .frame(width: 1000, height: 800)
+                .fixedSize()
         }
         .sheet(isPresented: $showingChangePassword) {
             ChangePasswordView()
@@ -386,7 +402,7 @@ struct EditProfileView: View {
     @State private var successMessage: String?
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(spacing: 30) {
                     personalInformationSection
@@ -676,7 +692,7 @@ struct ChangePasswordView: View {
     @State private var successMessage: String?
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section {
                     SecureField("Current Password", text: $currentPassword)

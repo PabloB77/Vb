@@ -4,7 +4,7 @@ struct LearnView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 AppColorScheme.backgroundGradient
                     .ignoresSafeArea()
@@ -22,9 +22,11 @@ struct LearnView: View {
             }
             .navigationTitle("Learn")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
-                        dismiss()
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { dismiss() }) {
+                        Text("Done")
+                            .foregroundColor(AppColorScheme.primary)
+                            .fontWeight(.semibold)
                     }
                 }
             }
@@ -90,35 +92,64 @@ struct ResourceCard: View {
     let title: String
     let description: String
     let color: Color
+    @State private var isHovered = false
     
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 20) {
             Image(systemName: icon)
-                .font(.system(size: 32))
+                .font(.system(size: 36, weight: .semibold))
                 .foregroundColor(color)
-                .frame(width: 60, height: 60)
-                .background(color.opacity(0.1))
-                .cornerRadius(12)
+                .frame(width: 70, height: 70)
+                .background(
+                    LinearGradient(
+                        gradient: Gradient(colors: [color.opacity(0.15), color.opacity(0.25)]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .cornerRadius(16)
+                .shadow(color: color.opacity(0.2), radius: 8, x: 0, y: 4)
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(title)
-                    .font(.headline)
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(AppColorScheme.textPrimary)
                 
                 Text(description)
-                    .font(.subheadline)
+                    .font(.system(size: 14))
                     .foregroundColor(AppColorScheme.textSecondary)
+                    .lineLimit(2)
             }
             
             Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(AppColorScheme.textSecondary)
         }
-        .padding()
-        .background(AppColorScheme.cardBackground)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(AppColorScheme.border, lineWidth: 1)
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(isHovered ? AppColorScheme.primary.opacity(0.03) : AppColorScheme.cardBackground)
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(
+                    isHovered ? color.opacity(0.3) : AppColorScheme.border,
+                    lineWidth: isHovered ? 2 : 1
+                )
+        )
+        .shadow(
+            color: isHovered ? color.opacity(0.1) : AppColorScheme.overlayMedium,
+            radius: isHovered ? 12 : 6,
+            x: 0,
+            y: 4
+        )
+        .onHover { hovering in
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                isHovered = hovering
+            }
+        }
     }
 }
 
@@ -155,25 +186,53 @@ struct TipCard: View {
     let icon: String
     let tip: String
     let color: Color
+    @State private var isHovered = false
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 16) {
             Image(systemName: icon)
+                .font(.system(size: 20))
                 .foregroundColor(color)
+                .frame(width: 40, height: 40)
+                .background(
+                    LinearGradient(
+                        gradient: Gradient(colors: [color.opacity(0.15), color.opacity(0.25)]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .cornerRadius(10)
             
             Text(tip)
-                .font(.body)
+                .font(.system(size: 15))
                 .foregroundColor(AppColorScheme.textPrimary)
+                .lineLimit(3)
             
             Spacer()
         }
-        .padding()
-        .background(AppColorScheme.cardBackground)
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(AppColorScheme.border, lineWidth: 1)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(isHovered ? AppColorScheme.primary.opacity(0.03) : AppColorScheme.cardBackground)
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(
+                    isHovered ? color.opacity(0.3) : AppColorScheme.border,
+                    lineWidth: isHovered ? 2 : 1
+                )
+        )
+        .shadow(
+            color: isHovered ? color.opacity(0.1) : AppColorScheme.overlayLight,
+            radius: isHovered ? 8 : 4,
+            x: 0,
+            y: 2
+        )
+        .onHover { hovering in
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                isHovered = hovering
+            }
+        }
     }
 }
 

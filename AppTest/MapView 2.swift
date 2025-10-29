@@ -293,6 +293,8 @@ struct MapView: View {
                     .fixedSize()
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .animation(.spring(response: 0.5, dampingFraction: 0.8), value: showingSoilPopup)
             }
             .sheet(isPresented: $showingSoilDataPopup) {
                 SoilDataPopup(soilData: soilData)
@@ -300,6 +302,8 @@ struct MapView: View {
                     .fixedSize()
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .animation(.spring(response: 0.5, dampingFraction: 0.8), value: showingSoilDataPopup)
             }
         }
     }
@@ -402,6 +406,7 @@ struct SoilSelectionPopup: View {
     @State private var showingCropPopup = false
     @State private var ragOutput = ""
     @State private var isGeneratingRAG = false
+    @State private var ragCrops: [Crop] = []
     
     let cropRetrievalSystem: CropRetrievalSystem
     
@@ -461,7 +466,7 @@ struct SoilSelectionPopup: View {
                                 VStack(alignment: .leading, spacing: DesignSystem.smallPadding) {
                                     SectionHeader("Soil Analysis", systemImage: "magnifyingglass")
                                     
-                                    if isGeneratingDescription {
+                                    if isGeneratingDescription && soilDescription.isEmpty {
                                         LoadingView(title: "Analyzing soil composition...")
                                     } else if !soilDescription.isEmpty {
                                         Text(soilDescription)
@@ -479,7 +484,7 @@ struct SoilSelectionPopup: View {
                                 VStack(alignment: .leading, spacing: DesignSystem.smallPadding) {
                                     SectionHeader("AI Analysis", systemImage: "sparkles")
                                     
-                                    if isGenerating {
+                                    if isGenerating && aiOutput.isEmpty {
                                         LoadingView(title: "Generating analysis...")
                                     } else if !aiOutput.isEmpty {
                                         Text(aiOutput)
@@ -579,12 +584,15 @@ struct SoilSelectionPopup: View {
             .sheet(isPresented: $showingCropPopup) {
                 CropRecommendationsPopup(
                     cropRecommendations: $cropRecommendations,
-                    isGenerating: $isGeneratingCrops
+                    isGenerating: $isGeneratingCrops,
+                    ragCrops: ragCrops
                 )
                 .frame(width: 700, height: 600)
                 .fixedSize()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.spring(response: 0.5, dampingFraction: 0.8), value: showingCropPopup)
             }
             .onAppear {
                 fetchGrowingZone()
@@ -668,6 +676,7 @@ struct SoilSelectionPopup: View {
                 
                 DispatchQueue.main.async {
                     ragOutput = output
+                    ragCrops = bestCrops
                     isGeneratingRAG = false
                     generateCropRecommendations()
                 }
@@ -952,9 +961,11 @@ Begin with your crop recommendations, ordered from highest to lowest estimated r
 struct CropRecommendationsPopup: View {
     @Binding var cropRecommendations: String
     @Binding var isGenerating: Bool
+    let ragCrops: [Crop]
     @Environment(\.dismiss) private var dismiss
     @State private var cropImages: [String: NSImage] = [:]
     @State private var selectedCrop: ParsedCrop?
+    @State private var pendingCropRequests = Set<String>()
     
     private var parsedCrops: [ParsedCrop] {
             let lines = cropRecommendations.components(separatedBy: "\n")
@@ -978,11 +989,14 @@ struct CropRecommendationsPopup: View {
                     
                     var cropName = trimmed
                     cropName = cropName.replacingOccurrences(of: "^\\*+\\d+\\.\\s*", with: "", options: .regularExpression)
-                    cropName = cropName.replacingOccurrences(of: "\\*+$", with: "")
+                    cropName = cropName.replacingOccurrences(of: "^\\*+\\s*", with: "", options: .regularExpression)
+                    cropName = cropName.replacingOccurrences(of: "\\s*\\*+$", with: "", options: .regularExpression)
                     
                     if let parenIndex = cropName.firstIndex(of: "(") {
                         cropName = String(cropName[..<parenIndex]).trimmingCharacters(in: .whitespaces)
                     }
+                    
+                    cropName = cropName.trimmingCharacters(in: .whitespaces)
                     
                     currentCrop = ParsedCrop(name: cropName, fullText: trimmed)
                     estimatedRevenue = ""
@@ -1032,7 +1046,7 @@ struct CropRecommendationsPopup: View {
                             ForEach(parsedCrops) { crop in
                                 CropItemView(crop: crop, selectedCrop: $selectedCrop)
                                     .transition(.opacity.combined(with: .move(edge: .bottom)))
-                                    .onAppear {
+                                    .task(id: crop.id) {
                                         fetchCropImage(for: crop.name)
                                     }
                             }
@@ -1069,27 +1083,67 @@ struct CropRecommendationsPopup: View {
                 .fixedSize()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
     
     func fetchCropImage(for cropName: String) {
-        guard cropImages[cropName] == nil else { return }
+        guard cropImages[cropName] == nil else { 
+            print("DEBUG: Image already cached for \(cropName)")
+            return 
+        }
+        guard !pendingCropRequests.contains(cropName) else { 
+            print("DEBUG: Image request already pending for \(cropName)")
+            return 
+        }
+        pendingCropRequests.insert(cropName)
+        print("DEBUG: Fetching image for \(cropName)")
         
-        let cleanName = cropName
+        // Find matching crop in RAG results
+        let matchingRagCrop = ragCrops.first { ragCrop in
+            cropName.localizedCaseInsensitiveContains(ragCrop.commodityType) ||
+            ragCrop.commodityType.localizedCaseInsensitiveContains(cropName) ||
+            cropName.localizedCaseInsensitiveContains(ragCrop.genus)
+        }
+        
+        guard let cropToFetch = matchingRagCrop else {
+            pendingCropRequests.remove(cropName)
+            return
+        }
+        
+        let cleanName = cropToFetch.commodityType
             .trimmingCharacters(in: .whitespaces)
             .replacingOccurrences(of: " ", with: "_")
         
         let apiURL = "https://en.wikipedia.org/api/rest_v1/page/summary/\(cleanName)"
         
-        guard let url = URL(string: apiURL.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "") else { return }
+        guard let encodedURL = apiURL.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed),
+              let url = URL(string: encodedURL) else {
+            pendingCropRequests.remove(cropName)
+            return
+        }
         
         var request = URLRequest(url: url)
         request.setValue("SoilMapApp/1.0", forHTTPHeaderField: "User-Agent")
-        request.timeoutInterval = 5.0
+        request.timeoutInterval = 15.0
         
         DispatchQueue.global(qos: .userInitiated).async {
             URLSession.shared.dataTask(with: request) { data, response, error in
-                guard let data = data else { return }
+                defer {
+                    DispatchQueue.main.async {
+                        pendingCropRequests.remove(cropName)
+                    }
+                }
+                
+                if let error = error {
+                    print("DEBUG: Network error fetching Wikipedia for \(cropName): \(error.localizedDescription)")
+                    return
+                }
+                
+                guard let data = data else { 
+                    print("DEBUG: No data from Wikipedia for \(cropName)")
+                    return 
+                }
                 
                 do {
                     if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
@@ -1108,19 +1162,30 @@ struct CropRecommendationsPopup: View {
                            let imageURL = URL(string: imageURLString) {
                             
                             var imageRequest = URLRequest(url: imageURL)
-                            imageRequest.timeoutInterval = 5.0
+                            imageRequest.timeoutInterval = 15.0
                             
-                            URLSession.shared.dataTask(with: imageRequest) { imageData, _, _ in
-                                guard let imageData = imageData, let image = NSImage(data: imageData) else { return }
+                            URLSession.shared.dataTask(with: imageRequest) { imageData, _, imageError in
+                                if let imageError = imageError {
+                                    print("DEBUG: Network error loading image for \(cropName): \(imageError.localizedDescription)")
+                                    return
+                                }
+                                
+                                guard let imageData = imageData, let image = NSImage(data: imageData) else { 
+                                    print("DEBUG: Failed to decode image for \(cropName)")
+                                    return 
+                                }
                                 
                                 DispatchQueue.main.async {
                                     cropImages[cropName] = image
+                                    print("DEBUG: Successfully loaded image for \(cropName) (\(image.size))")
                                 }
                             }.resume()
+                        } else {
+                            print("DEBUG: No image URL found in Wikipedia response for \(cropName)")
                         }
                     }
                 } catch {
-                    print("Error parsing Wikipedia response for \(cropName): \(error)")
+                    print("DEBUG: Error parsing Wikipedia response for \(cropName): \(error)")
                 }
             }.resume()
         }
@@ -1159,7 +1224,9 @@ struct CropItemView: View {
     
     var body: some View {
         Button(action: {
-            selectedCrop = crop
+            withAnimation {
+                selectedCrop = crop
+            }
         }) {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 6) {
@@ -1220,6 +1287,50 @@ struct CropDetailPopup: View {
     @State private var showGardeningVideos = false
     @StateObject private var gardenManager = MyGardenManager()
     @State private var showGardenAdded = false
+    
+    func formattedCropText(for text: String) -> some View {
+        let lines = text.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+        var sections: [(header: String, content: String)] = []
+        var currentHeader = ""
+        var currentContent = ""
+        
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.contains(":") && (trimmed.contains("Crop Description") || trimmed.contains("Soil Match") || 
+                                         trimmed.contains("Economic Profile") || trimmed.contains("Estimated Revenue") || 
+                                         trimmed.contains("Key Advantage")) {
+                if !currentHeader.isEmpty {
+                    sections.append((currentHeader, currentContent.trimmingCharacters(in: .whitespaces)))
+                }
+                let parts = trimmed.components(separatedBy: ":")
+                currentHeader = parts[0]
+                currentContent = parts.count > 1 ? parts.dropFirst().joined(separator: ":").trimmingCharacters(in: .whitespaces) : ""
+            } else if !trimmed.isEmpty {
+                currentContent += (currentContent.isEmpty ? "" : " ") + trimmed
+            }
+        }
+        if !currentHeader.isEmpty {
+            sections.append((currentHeader, currentContent.trimmingCharacters(in: .whitespaces)))
+        }
+        
+        return VStack(alignment: .leading, spacing: 16) {
+            ForEach(Array(sections.enumerated()), id: \.offset) { index, section in
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(section.header)
+                        .font(.headline)
+                        .foregroundColor(AppColorScheme.primary)
+                    
+                    Text(section.content)
+                        .foregroundColor(AppColorScheme.textPrimary)
+                        .font(.system(size: 15))
+                        .lineSpacing(6)
+                }
+                .padding(12)
+                .background(AppColorScheme.cardBackground)
+                .cornerRadius(8)
+            }
+        }
+    }
     
     var body: some View {
         NavigationStack {
@@ -1309,11 +1420,7 @@ struct CropDetailPopup: View {
                         .padding(.vertical)
                     }
                     
-                    Text(crop.fullText)
-                        .textSelection(.enabled)
-                        .foregroundColor(AppColorScheme.textPrimary)
-                        .font(.system(size: 15))
-                        .lineSpacing(6)
+                    formattedCropText(for: crop.fullText)
                         .padding(20)
                         .background(
                             RoundedRectangle(cornerRadius: 12)
@@ -1719,7 +1826,7 @@ private struct SoilDetailView: View {
                             VStack(alignment: .leading, spacing: DesignSystem.smallPadding) {
                                 SectionHeader("Description", systemImage: "sparkles")
                                 
-                                if isGeneratingDescription {
+                                if isGeneratingDescription && aiDescription.isEmpty {
                                     LoadingView(title: "Generating description...")
                                 } else if !aiDescription.isEmpty {
                                     Text(aiDescription)

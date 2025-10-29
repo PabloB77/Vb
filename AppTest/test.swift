@@ -135,7 +135,7 @@ public class AIManager {
         - Porosity: [select one: Virtually none, Low, Medium Low, Medium, Medium High, High]
         - Organic Matter: [select one: Very Low, Low, Medium Low, Medium, Medium High, High]  
         - Soil Texture: [select one: Sand, Sand and Loam, Loam, Loam and Clay, Clay, Clay and Loam, Sand and Clay]
-        - pH (estimated): [select one: 4.5-6, 6-7, 7-8.5]
+        - pH (estimated): [select one: 4.5-5.5, 5.5-6.5, 6.5-7.5, 7.5-8.5]
         - Drainage: [select one: Poor, Moderate, Well-drained, Excessive]
         - Color (estimated): [select one: Yellow, Sand, Black, Brown, Red, Red-Brown, Gray, Mixed]
         
@@ -198,7 +198,7 @@ public class AIManager {
         - Porosity: [select one: Virtually none, Low, Medium Low, Medium, Medium High, High]
         - Organic Matter: [select one: Very Low, Low, Medium Low, Medium, Medium High, High]  
         - Soil Texture: [select one: Sand, Sand and Loam, Loam, Loam and Clay, Clay, Clay and Loam, Sand and Clay]
-        - pH (estimated): [select one: 4.5-6, 6-7, 7-8.5]
+        - pH (estimated): [select one: 4.5-5.5, 5.5-6.5, 6.5-7.5, 7.5-8.5]
         - Drainage: [select one: Poor, Moderate, Well-drained, Excessive]
         - Color (estimated): [select one: Yellow, Sand, Black, Brown, Red, Red-Brown, Gray, Mixed]
         

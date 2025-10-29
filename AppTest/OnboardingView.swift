@@ -121,7 +121,7 @@ struct OnboardingView: View {
                                 }
                             }) {
                                 HStack(spacing: 16) {
-                                    Image(systemName: "tractor.fill")
+                                    Image(systemName: "leaf.fill")
                                         .font(.system(size: 24))
                                         .foregroundColor(usage == "Farming" ? .white : AppColorScheme.primary)
                                         .frame(width: 50, height: 50)

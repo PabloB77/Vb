@@ -135,6 +135,8 @@ class MyGardenManager: ObservableObject {
         isLoading = true
         self.userId = userId
         
+        print("DEBUG: Loading garden for userId: \(userId)")
+        
         db.collection("myGarden")
             .whereField("userId", isEqualTo: userId)
             .order(by: "addedAt", descending: true)
@@ -143,14 +145,21 @@ class MyGardenManager: ObservableObject {
                     self.isLoading = false
                     
                     if let error = error {
+                        print("DEBUG: Error loading garden: \(error.localizedDescription)")
                         self.errorMessage = "Error loading garden: \(error.localizedDescription)"
                         return
                     }
                     
-                    guard let documents = snapshot?.documents else { return }
+                    guard let documents = snapshot?.documents else {
+                        print("DEBUG: No documents found in myGarden collection")
+                        return
+                    }
+                    
+                    print("DEBUG: Found \(documents.count) plants in garden")
                     self.savedPlants = documents.compactMap { doc in
                         SavedPlant.fromDocument(doc)
                     }
+                    print("DEBUG: Loaded \(self.savedPlants.count) plants")
                 }
             }
     }

@@ -187,11 +187,15 @@ struct MainView: View {
                 .environmentObject(authViewModel)
                 .frame(width: 700, height: 600)
                 .fixedSize()
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.spring(response: 0.5, dampingFraction: 0.8), value: showingMyGarden)
         }
         .sheet(isPresented: $showingLearn) {
             LearnView()
                 .frame(width: 800, height: 600)
                 .fixedSize()
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.spring(response: 0.5, dampingFraction: 0.8), value: showingLearn)
         }
     }
 }

@@ -96,13 +96,13 @@ struct MainView: View {
                         .padding(.vertical, 12)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                     }
-                    .frame(height: 80)
+                    .frame(height: 120)
                     
                     // Logo - CENTERED with fixed position
                     Image("PLANTIFY-2")
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 120)
+                        .frame(height: 280)
                         .shadow(color: .black.opacity(0.12), radius: 20, x: 0, y: 8)
                         .scaleEffect(isHoveringLogo ? 1.05 : 1.0)
                         .onHover { hovering in
@@ -111,7 +111,7 @@ struct MainView: View {
                             }
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: 80)
+                        .frame(height: 120)
                     
                     // Navigation tabs - Better spacing and fixed with padding
                     HStack(spacing: 30) {
@@ -167,7 +167,7 @@ struct MainView: View {
                     .frame(height: 1)
                     .frame(maxHeight: .infinity, alignment: .bottom)
             }
-            .frame(height: 230)
+            .frame(height: 310)
             
             // Main content area with safe area handling
             GeometryReader { geometry in

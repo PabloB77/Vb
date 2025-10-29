@@ -7,32 +7,40 @@ struct ProfileHeaderView: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            // Profile Picture Placeholder
+            // Profile Picture with gradient matching the app
             Circle()
-                .fill(Color.blue.opacity(0.2))
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [AppColorScheme.primary, AppColorScheme.accent]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
                 .frame(width: 60, height: 60)
                 .overlay(
-                    Image(systemName: authViewModel.isGuest ? "person.circle" : "person.fill")
-                        .font(.title)
-                        .foregroundColor(.blue)
+                    Text(authViewModel.user?.email?.prefix(1).uppercased() ?? "U")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundColor(.white)
                 )
+                .shadow(color: AppColorScheme.primary.opacity(0.3), radius: 8, x: 0, y: 4)
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(authViewModel.isGuest ? "Guest User" : getUserDisplayName())
                     .font(.headline)
                     .fontWeight(.semibold)
+                    .foregroundColor(AppColorScheme.textPrimary)
                 
                 Text(authViewModel.isGuest ? "Tap to create account" : getUserEmail())
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColorScheme.textSecondary)
                 
                 if !authViewModel.userUsage.isEmpty {
                     Text(authViewModel.userUsage)
                         .font(.caption)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
-                        .background(Color.blue.opacity(0.1))
-                        .foregroundColor(.blue)
+                        .background(AppColorScheme.primary.opacity(0.1))
+                        .foregroundColor(AppColorScheme.primary)
                         .cornerRadius(4)
                 }
             }
@@ -40,7 +48,7 @@ struct ProfileHeaderView: View {
             Spacer()
             
             Image(systemName: "chevron.right")
-                .foregroundColor(.secondary)
+                .foregroundColor(AppColorScheme.textSecondary)
                 .font(.caption)
         }
         .padding(.vertical, 8)
@@ -119,24 +127,30 @@ struct SettingsView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Profile Section
-                    profileSection
-                    
-                    // Account Settings
-                    accountSection
-                    
-                    // App Settings
-                    preferencesSection
-                    
-                    // Support Section
-                    supportSection
-                    
-                    // Danger Zone
-                    accountActionsSection
+            ZStack {
+                // Unified gradient background matching the app
+                AppColorScheme.backgroundGradient
+                    .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Profile Section
+                        profileSection
+                        
+                        // Account Settings
+                        accountSection
+                        
+                        // App Settings
+                        preferencesSection
+                        
+                        // Support Section
+                        supportSection
+                        
+                        // Danger Zone
+                        accountActionsSection
+                    }
+                    .padding()
                 }
-                .padding()
             }
             .frame(width: 700, height: 600)
             .fixedSize()
@@ -187,6 +201,7 @@ struct SettingsView: View {
             Text("Profile")
                 .font(.title2)
                 .fontWeight(.bold)
+                .foregroundColor(AppColorScheme.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             ProfileHeaderView()
@@ -195,8 +210,18 @@ struct SettingsView: View {
                 }
         }
         .padding()
-        .background(Color.blue.opacity(0.05))
+        .background(AppColorScheme.cardBackground)
         .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(AppColorScheme.border, lineWidth: 1)
+        )
+        .shadow(
+            color: AppColorScheme.primary.opacity(0.1),
+            radius: 8,
+            x: 0,
+            y: 4
+        )
     }
     
     private var accountSection: some View {
@@ -204,6 +229,7 @@ struct SettingsView: View {
             Text("Account")
                 .font(.title2)
                 .fontWeight(.bold)
+                .foregroundColor(AppColorScheme.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             VStack(spacing: 12) {
@@ -243,8 +269,18 @@ struct SettingsView: View {
             }
         }
         .padding()
-        .background(Color.green.opacity(0.05))
+        .background(AppColorScheme.cardBackground)
         .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(AppColorScheme.border, lineWidth: 1)
+        )
+        .shadow(
+            color: AppColorScheme.primary.opacity(0.1),
+            radius: 8,
+            x: 0,
+            y: 4
+        )
     }
     
     private var preferencesSection: some View {
@@ -252,6 +288,7 @@ struct SettingsView: View {
             Text("Preferences")
                 .font(.title2)
                 .fontWeight(.bold)
+                .foregroundColor(AppColorScheme.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             VStack(spacing: 12) {
@@ -281,8 +318,18 @@ struct SettingsView: View {
             }
         }
         .padding()
-        .background(Color.purple.opacity(0.05))
+        .background(AppColorScheme.cardBackground)
         .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(AppColorScheme.border, lineWidth: 1)
+        )
+        .shadow(
+            color: AppColorScheme.primary.opacity(0.1),
+            radius: 8,
+            x: 0,
+            y: 4
+        )
     }
     
     private var supportSection: some View {
@@ -290,6 +337,7 @@ struct SettingsView: View {
             Text("Support")
                 .font(.title2)
                 .fontWeight(.bold)
+                .foregroundColor(AppColorScheme.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             VStack(spacing: 12) {
@@ -319,8 +367,18 @@ struct SettingsView: View {
             }
         }
         .padding()
-        .background(Color.orange.opacity(0.05))
+        .background(AppColorScheme.cardBackground)
         .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(AppColorScheme.border, lineWidth: 1)
+        )
+        .shadow(
+            color: AppColorScheme.primary.opacity(0.1),
+            radius: 8,
+            x: 0,
+            y: 4
+        )
     }
     
     private var accountActionsSection: some View {
@@ -328,6 +386,7 @@ struct SettingsView: View {
             Text("Account Actions")
                 .font(.title2)
                 .fontWeight(.bold)
+                .foregroundColor(AppColorScheme.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             VStack(spacing: 12) {
@@ -337,13 +396,13 @@ struct SettingsView: View {
                     }) {
                         HStack {
                             Image(systemName: "person.badge.plus")
-                                .foregroundColor(.blue)
+                                .foregroundColor(AppColorScheme.primary)
                             Text("Create Account")
-                                .foregroundColor(.blue)
+                                .foregroundColor(AppColorScheme.primary)
                             Spacer()
                         }
                         .padding()
-                        .background(Color.blue.opacity(0.1))
+                        .background(AppColorScheme.primary.opacity(0.1))
                         .cornerRadius(12)
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -354,13 +413,13 @@ struct SettingsView: View {
                 }) {
                     HStack {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .foregroundColor(.orange)
+                            .foregroundColor(AppColorScheme.warning)
                         Text("Sign Out")
-                            .foregroundColor(.orange)
+                            .foregroundColor(AppColorScheme.warning)
                         Spacer()
                     }
                     .padding()
-                    .background(Color.orange.opacity(0.1))
+                    .background(AppColorScheme.warning.opacity(0.1))
                     .cornerRadius(12)
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -371,13 +430,13 @@ struct SettingsView: View {
                     }) {
                         HStack {
                             Image(systemName: "trash")
-                                .foregroundColor(.red)
+                                .foregroundColor(AppColorScheme.error)
                             Text("Delete Account")
-                                .foregroundColor(.red)
+                                .foregroundColor(AppColorScheme.error)
                             Spacer()
                         }
                         .padding()
-                        .background(Color.red.opacity(0.1))
+                        .background(AppColorScheme.error.opacity(0.1))
                         .cornerRadius(12)
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -385,8 +444,18 @@ struct SettingsView: View {
             }
         }
         .padding()
-        .background(Color.red.opacity(0.05))
+        .background(AppColorScheme.cardBackground)
         .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(AppColorScheme.border, lineWidth: 1)
+        )
+        .shadow(
+            color: AppColorScheme.primary.opacity(0.1),
+            radius: 8,
+            x: 0,
+            y: 4
+        )
     }
 }
 
@@ -403,14 +472,20 @@ struct EditProfileView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 30) {
-                    personalInformationSection
-                    usagePreferenceSection
-                    locationSection
-                    messageSection
+            ZStack {
+                // Unified gradient background matching the app
+                AppColorScheme.backgroundGradient
+                    .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 30) {
+                        personalInformationSection
+                        usagePreferenceSection
+                        locationSection
+                        messageSection
+                    }
+                    .padding()
                 }
-                .padding()
             }
             .navigationTitle("Edit Profile")
             .toolbar {
@@ -440,6 +515,7 @@ struct EditProfileView: View {
             Text("Personal Information")
                 .font(.title2)
                 .fontWeight(.bold)
+                .foregroundColor(AppColorScheme.textPrimary)
             
             VStack(spacing: 16) {
                 displayNameField
@@ -447,16 +523,27 @@ struct EditProfileView: View {
             }
         }
         .padding()
-        .background(Color.blue.opacity(0.05))
+        .background(AppColorScheme.cardBackground)
         .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(AppColorScheme.border, lineWidth: 1)
+        )
+        .shadow(
+            color: AppColorScheme.primary.opacity(0.1),
+            radius: 8,
+            x: 0,
+            y: 4
+        )
     }
     
     private var displayNameField: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Display Name")
                 .font(.headline)
+                .foregroundColor(AppColorScheme.textPrimary)
             TextField("Enter your display name", text: $displayName)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .textFieldStyle(.roundedBorder)
                 .frame(height: 44)
         }
     }
@@ -465,8 +552,9 @@ struct EditProfileView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Email")
                 .font(.headline)
+                .foregroundColor(AppColorScheme.textPrimary)
             TextField("Enter your email", text: $email)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .textFieldStyle(.roundedBorder)
                 .frame(height: 44)
         }
     }
@@ -476,6 +564,7 @@ struct EditProfileView: View {
             Text("What do you plan to use this for?")
                 .font(.title2)
                 .fontWeight(.bold)
+                .foregroundColor(AppColorScheme.textPrimary)
             
             VStack(spacing: 16) {
                 gardeningButton
@@ -483,8 +572,18 @@ struct EditProfileView: View {
             }
         }
         .padding()
-        .background(Color.green.opacity(0.05))
+        .background(AppColorScheme.cardBackground)
         .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(AppColorScheme.border, lineWidth: 1)
+        )
+        .shadow(
+            color: AppColorScheme.primary.opacity(0.1),
+            radius: 8,
+            x: 0,
+            y: 4
+        )
     }
     
     private var gardeningButton: some View {
@@ -502,7 +601,7 @@ struct EditProfileView: View {
                         .fontWeight(.semibold)
                     Text("Growing vegetables, herbs, and flowers at home")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColorScheme.textSecondary)
                 }
                 
                 Spacer()
@@ -510,16 +609,16 @@ struct EditProfileView: View {
                 if usage == "Personal Gardening" {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.title2)
-                        .foregroundColor(.blue)
+                        .foregroundColor(AppColorScheme.primary)
                 }
             }
             .padding(20)
-            .background(usage == "Personal Gardening" ? Color.blue.opacity(0.1) : Color.gray.opacity(0.1))
-            .foregroundColor(usage == "Personal Gardening" ? .blue : .primary)
+            .background(usage == "Personal Gardening" ? AppColorScheme.primary.opacity(0.1) : AppColorScheme.cardBackground)
+            .foregroundColor(usage == "Personal Gardening" ? AppColorScheme.primary : AppColorScheme.textPrimary)
             .cornerRadius(16)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(usage == "Personal Gardening" ? Color.blue : Color.clear, lineWidth: 3)
+                    .stroke(usage == "Personal Gardening" ? AppColorScheme.primary : AppColorScheme.border, lineWidth: 2)
             )
         }
         .buttonStyle(PlainButtonStyle())
@@ -540,7 +639,7 @@ struct EditProfileView: View {
                         .fontWeight(.semibold)
                     Text("Commercial agriculture and large-scale growing")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColorScheme.textSecondary)
                 }
                 
                 Spacer()
@@ -548,16 +647,16 @@ struct EditProfileView: View {
                 if usage == "Farming" {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.title2)
-                        .foregroundColor(.blue)
+                        .foregroundColor(AppColorScheme.primary)
                 }
             }
             .padding(20)
-            .background(usage == "Farming" ? Color.blue.opacity(0.1) : Color.gray.opacity(0.1))
-            .foregroundColor(usage == "Farming" ? .blue : .primary)
+            .background(usage == "Farming" ? AppColorScheme.primary.opacity(0.1) : AppColorScheme.cardBackground)
+            .foregroundColor(usage == "Farming" ? AppColorScheme.primary : AppColorScheme.textPrimary)
             .cornerRadius(16)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(usage == "Farming" ? Color.blue : Color.clear, lineWidth: 3)
+                    .stroke(usage == "Farming" ? AppColorScheme.primary : AppColorScheme.border, lineWidth: 2)
             )
         }
         .buttonStyle(PlainButtonStyle())
@@ -568,39 +667,51 @@ struct EditProfileView: View {
             Text("Location")
                 .font(.title2)
                 .fontWeight(.bold)
+                .foregroundColor(AppColorScheme.textPrimary)
             
             VStack(alignment: .leading, spacing: 8) {
                 Text("State, Address, or Zip Code")
                     .font(.headline)
+                    .foregroundColor(AppColorScheme.textPrimary)
                 TextField("Enter your location", text: $location)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .textFieldStyle(.roundedBorder)
                     .frame(height: 44)
             }
         }
         .padding()
-        .background(Color.orange.opacity(0.05))
+        .background(AppColorScheme.cardBackground)
         .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(AppColorScheme.border, lineWidth: 1)
+        )
+        .shadow(
+            color: AppColorScheme.primary.opacity(0.1),
+            radius: 8,
+            x: 0,
+            y: 4
+        )
     }
     
     private var messageSection: some View {
         VStack(spacing: 16) {
             if let errorMessage = errorMessage {
                 Text(errorMessage)
-                    .foregroundColor(.red)
+                    .foregroundColor(AppColorScheme.error)
                     .font(.subheadline)
                     .multilineTextAlignment(.center)
                     .padding()
-                    .background(Color.red.opacity(0.1))
+                    .background(AppColorScheme.error.opacity(0.1))
                     .cornerRadius(12)
             }
             
             if let successMessage = successMessage {
                 Text(successMessage)
-                    .foregroundColor(.green)
+                    .foregroundColor(AppColorScheme.success)
                     .font(.subheadline)
                     .multilineTextAlignment(.center)
                     .padding()
-                    .background(Color.green.opacity(0.1))
+                    .background(AppColorScheme.success.opacity(0.1))
                     .cornerRadius(12)
             }
         }
